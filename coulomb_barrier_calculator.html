@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coulomb Barrier Calculator | Nuclear Physics</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#050d1a;
+  --cyan:#00d4ff;
+  --purple:#7b2fff;
+  --gold:#ffd700;
+  --text:#e0e8ff;
+  --muted:#8899bb;
+  --border:rgba(0,180,255,0.15);
+  --card:rgba(255,255,255,0.04);
+}
+
+body{
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(ellipse at 15% 15%,rgba(0,100,220,0.13) 0%,transparent 55%),
+    radial-gradient(ellipse at 85% 85%,rgba(123,47,255,0.10) 0%,transparent 55%);
+  color:var(--text);
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  min-height:100vh;
+  line-height:1.5;
+}
+
+/* ── Header ──────────────────────────────────────────── */
+header{text-align:center;padding:2.5rem 1.5rem 2rem}
+.header-logo{
+  font-size:2.8rem;font-weight:900;letter-spacing:-.04em;
+  background:linear-gradient(135deg,var(--cyan) 20%,var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;display:block;margin-bottom:.5rem;line-height:1;
+}
+header h1{
+  font-size:clamp(1.6rem,4vw,2.8rem);font-weight:700;
+  background:linear-gradient(135deg,var(--cyan) 25%,var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;letter-spacing:-.02em;margin-bottom:.4rem;
+}
+header p{color:var(--muted);font-size:.93rem}
+
+/* ── Layout ──────────────────────────────────────────── */
+.container{max-width:980px;margin:0 auto;padding:0 1.25rem 3.5rem}
+.section{margin-bottom:1.2rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem}
+.section-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:.8rem}
+
+/* ── Presets ─────────────────────────────────────────── */
+.preset-buttons{display:flex;flex-wrap:wrap;gap:.4rem}
+.preset-btn{
+  background:transparent;border:1px solid rgba(0,180,255,.22);color:var(--cyan);
+  padding:.26rem .78rem;border-radius:20px;cursor:pointer;
+  font-size:.8rem;font-family:inherit;transition:all .18s;
+}
+.preset-btn:hover{background:rgba(0,212,255,.12);border-color:var(--cyan);transform:translateY(-1px)}
+.preset-btn.active{background:rgba(0,212,255,.18);border-color:var(--cyan)}
+
+/* ── Nucleus input layout ────────────────────────────── */
+.inputs-layout{
+  display:grid;
+  grid-template-columns:1fr 38px 1fr;
+  gap:1rem;align-items:center;
+}
+@media(max-width:540px){
+  .inputs-layout{grid-template-columns:1fr}
+  .plus-sep{justify-self:center;transform:none!important}
+}
+
+.nucleus-panel{
+  background:rgba(0,0,0,.22);border:1px solid var(--border);
+  border-radius:12px;padding:1.15rem;
+}
+.nucleus-panel h4{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.9rem}
+
+/* Periodic-table style mini display */
+.nucleus-display{
+  background:rgba(0,0,0,.3);border:1px solid rgba(0,180,255,.18);
+  border-radius:10px;padding:.7rem .5rem;text-align:center;
+  margin-bottom:.9rem;position:relative;min-height:80px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.nd-z{position:absolute;top:5px;left:8px;font-size:.72rem;color:var(--purple);font-weight:600}
+.nd-a{position:absolute;top:5px;right:8px;font-size:.72rem;color:var(--cyan);font-weight:600}
+.nd-sym{font-size:2.4rem;font-weight:700;color:var(--text);line-height:1}
+.nd-name{font-size:.65rem;color:var(--muted);margin-top:.2rem}
+
+/* Inputs */
+.field{margin-bottom:.7rem}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:.7rem;color:var(--muted);margin-bottom:.28rem}
+.field input[type="number"]{
+  width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(0,180,255,.2);
+  border-radius:8px;padding:.48rem .75rem;color:var(--text);
+  font-size:1rem;font-family:inherit;outline:none;
+  transition:border-color .18s,box-shadow .18s;
+  -moz-appearance:textfield;
+}
+.field input[type="number"]::-webkit-inner-spin-button,
+.field input[type="number"]::-webkit-outer-spin-button{opacity:.4}
+.field input[type="number"]:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,212,255,.08)}
+
+.plus-sep{
+  display:flex;align-items:center;justify-content:center;
+  font-size:2rem;color:rgba(0,180,255,.35);font-weight:300;
+  padding-top:2.4rem;
+}
+
+.params-row{margin-top:1rem;display:flex;gap:1rem;flex-wrap:wrap}
+.params-row .field{flex:0 0 210px;margin-bottom:0}
+.field .hint{font-size:.65rem;color:rgba(136,153,187,.6);margin-top:.2rem}
+
+/* ── Calculate button ────────────────────────────────── */
+.calc-btn{
+  display:block;width:100%;margin-top:1.2rem;
+  background:linear-gradient(135deg,#006fa8,var(--purple));
+  border:1px solid rgba(0,212,255,.28);border-radius:12px;
+  padding:.85rem 1rem;color:#fff;font-size:1rem;font-weight:600;
+  font-family:inherit;cursor:pointer;letter-spacing:.04em;
+  transition:all .2s;
+}
+.calc-btn:hover{
+  background:linear-gradient(135deg,#0087cf,#9b4fff);
+  transform:translateY(-2px);box-shadow:0 6px 22px rgba(0,212,255,.18);
+}
+.calc-btn:active{transform:translateY(0)}
+
+/* ── Results ─────────────────────────────────────────── */
+.reaction-label{
+  text-align:center;font-size:1.05rem;color:var(--muted);
+  margin-bottom:1rem;
+}
+.reaction-label .rn{color:var(--text);font-weight:500}
+
+.results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:.85rem}
+
+.res-card{
+  background:rgba(0,0,0,.33);border:1px solid rgba(0,180,255,.12);
+  border-radius:12px;padding:1rem;text-align:center;transition:border-color .3s;
+}
+.res-card.primary{border-color:rgba(0,212,255,.32);background:rgba(0,212,255,.04)}
+.res-card .rc-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.38rem}
+.res-card .rc-value{font-size:1.85rem;font-weight:700;color:var(--cyan);font-variant-numeric:tabular-nums;line-height:1}
+.res-card.primary .rc-value{
+  font-size:2.3rem;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.res-card .rc-unit{font-size:.75rem;color:var(--muted);margin-top:.28rem}
+.res-card .rc-value.empty{color:rgba(136,153,187,.25)}
+.res-card.primary .rc-value.empty{-webkit-text-fill-color:rgba(136,153,187,.2)}
+
+/* ── Formula box ─────────────────────────────────────── */
+.formula-box{
+  background:rgba(0,0,0,.4);border-left:3px solid var(--cyan);
+  border-radius:0 10px 10px 0;padding:.85rem 1.1rem;
+  font-family:'Courier New','Consolas',monospace;font-size:.82rem;
+  color:#9ab0cc;line-height:1.95;margin-top:1.2rem;
+}
+
+/* ── Chart ───────────────────────────────────────────── */
+.chart-wrapper{margin-top:1.25rem}
+.chart-wrapper h3{
+  font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--muted);margin-bottom:.7rem;
+}
+canvas#chart{width:100%;height:auto;display:block;border-radius:10px}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="header-logo">VR</span>
+  <h1>Coulomb Barrier Calculator</h1>
+  <p>Electrostatic barrier energy for nuclear reactions &mdash; results in MeV</p>
+</header>
+
+<div class="container">
+
+  <!-- Presets -->
+  <div class="section card">
+    <p class="section-title">Common Reactions</p>
+    <div class="preset-buttons">
+      <button class="preset-btn" onclick="preset(this,1,1,1,1)">p + p</button>
+      <button class="preset-btn" onclick="preset(this,1,2,1,3)">d + t</button>
+      <button class="preset-btn" onclick="preset(this,1,1,3,7)">p + ⁷Li</button>
+      <button class="preset-btn" onclick="preset(this,1,1,5,11)">p + ¹¹B</button>
+      <button class="preset-btn" onclick="preset(this,2,4,2,4)">⁴He + ⁴He</button>
+      <button class="preset-btn" onclick="preset(this,1,1,6,12)">p + ¹²C</button>
+      <button class="preset-btn" onclick="preset(this,2,4,6,12)">α + ¹²C</button>
+      <button class="preset-btn" onclick="preset(this,6,12,6,12)">¹²C + ¹²C</button>
+      <button class="preset-btn" onclick="preset(this,8,16,8,16)">¹⁶O + ¹⁶O</button>
+      <button class="preset-btn" onclick="preset(this,20,40,20,40)">⁴⁰Ca + ⁴⁰Ca</button>
+      <button class="preset-btn" onclick="preset(this,1,1,79,197)">p + ¹⁹⁷Au</button>
+      <button class="preset-btn" onclick="preset(this,36,86,36,86)">⁸⁶Kr + ⁸⁶Kr</button>
+    </div>
+  </div>
+
+  <!-- Calculator inputs -->
+  <div class="section card">
+    <div class="inputs-layout">
+
+      <!-- Projectile -->
+      <div class="nucleus-panel">
+        <h4>Projectile</h4>
+        <div class="nucleus-display">
+          <span class="nd-z" id="dZ1">1</span>
+          <span class="nd-a" id="dA1">1</span>
+          <span class="nd-sym" id="dSym1">H</span>
+          <div class="nd-name" id="dName1">Hydrogen</div>
+        </div>
+        <div class="field">
+          <label>Atomic Number Z&#8321;</label>
+          <input type="number" id="Z1" value="1" min="1" max="118" oninput="onInput()">
+        </div>
+        <div class="field">
+          <label>Mass Number A&#8321;</label>
+          <input type="number" id="A1" value="1" min="1" max="300" oninput="onInput()">
+        </div>
+      </div>
+
+      <div class="plus-sep">+</div>
+
+      <!-- Target -->
+      <div class="nucleus-panel">
+        <h4>Target</h4>
+        <div class="nucleus-display">
+          <span class="nd-z" id="dZ2">79</span>
+          <span class="nd-a" id="dA2">197</span>
+          <span class="nd-sym" id="dSym2">Au</span>
+          <div class="nd-name" id="dName2">Gold</div>
+        </div>
+        <div class="field">
+          <label>Atomic Number Z&#8322;</label>
+          <input type="number" id="Z2" value="79" min="1" max="118" oninput="onInput()">
+        </div>
+        <div class="field">
+          <label>Mass Number A&#8322;</label>
+          <input type="number" id="A2" value="197" min="1" max="300" oninput="onInput()">
+        </div>
+      </div>
+
+    </div>
+
+    <div class="params-row">
+      <div class="field">
+        <label>Nuclear radius parameter r&#8320; (fm)</label>
+        <input type="number" id="r0" value="1.2" min="0.8" max="2.5" step="0.05" oninput="onInput()">
+        <div class="hint">Default 1.2 fm &nbsp;|&nbsp; range 0.8 &ndash; 2.5 fm</div>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">&#9889; Calculate Coulomb Barrier</button>
+  </div>
+
+  <!-- Results -->
+  <div class="section card">
+    <p class="section-title">Results</p>
+    <p class="reaction-label">Reaction: <span class="rn" id="rxLabel">&#185;H + &#185;&#8313;&#8311;Au</span></p>
+
+    <div class="results-grid">
+      <div class="res-card primary">
+        <div class="rc-label">Coulomb Barrier V<sub>C</sub></div>
+        <div class="rc-value empty" id="rVC">&mdash;</div>
+        <div class="rc-unit">MeV</div>
+      </div>
+      <div class="res-card">
+        <div class="rc-label">Contact Distance R</div>
+        <div class="rc-value empty" id="rR">&mdash;</div>
+        <div class="rc-unit">fm</div>
+      </div>
+      <div class="res-card">
+        <div class="rc-label">Z&#8321; &times; Z&#8322;</div>
+        <div class="rc-value empty" id="rZZ">&mdash;</div>
+        <div class="rc-unit">charge product</div>
+      </div>
+      <div class="res-card">
+        <div class="rc-label">V<sub>C</sub> / nucleon</div>
+        <div class="rc-value empty" id="rVCN">&mdash;</div>
+        <div class="rc-unit">MeV / nucleon</div>
+      </div>
+    </div>
+
+    <div class="formula-box">
+      V_C  =  1.44 &times; Z&#8321; &times; Z&#8322; / R &nbsp;&nbsp;[MeV]<br>
+      R &nbsp;=  r&#8320; &times; ( &#8731;A&#8321;  +  &#8731;A&#8322; ) &nbsp;&nbsp;&nbsp;[fm]<br>
+      &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;<br>
+      ke&#178; = 1.44 MeV&middot;fm &nbsp;|&nbsp; r&#8320; = 1.2 fm (default)
+    </div>
+
+    <div class="chart-wrapper">
+      <h3>Coulomb Potential Energy V(r)</h3>
+      <canvas id="chart"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Element data ──────────────────────────────────────────────────
+const SYM = ['','H','He','Li','Be','B','C','N','O','F','Ne',
+ 'Na','Mg','Al','Si','P','S','Cl','Ar','K','Ca',
+ 'Sc','Ti','V','Cr','Mn','Fe','Co','Ni','Cu','Zn',
+ 'Ga','Ge','As','Se','Br','Kr','Rb','Sr','Y','Zr',
+ 'Nb','Mo','Tc','Ru','Rh','Pd','Ag','Cd','In','Sn',
+ 'Sb','Te','I','Xe','Cs','Ba','La','Ce','Pr','Nd',
+ 'Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb',
+ 'Lu','Hf','Ta','W','Re','Os','Ir','Pt','Au','Hg',
+ 'Tl','Pb','Bi','Po','At','Rn','Fr','Ra','Ac','Th',
+ 'Pa','U','Np','Pu','Am','Cm','Bk','Cf','Es','Fm',
+ 'Md','No','Lr','Rf','Db','Sg','Bh','Hs','Mt','Ds',
+ 'Rg','Cn','Nh','Fl','Mc','Lv','Ts','Og'];
+
+const NAME = ['','Hydrogen','Helium','Lithium','Beryllium','Boron',
+ 'Carbon','Nitrogen','Oxygen','Fluorine','Neon',
+ 'Sodium','Magnesium','Aluminum','Silicon','Phosphorus',
+ 'Sulfur','Chlorine','Argon','Potassium','Calcium',
+ 'Scandium','Titanium','Vanadium','Chromium','Manganese',
+ 'Iron','Cobalt','Nickel','Copper','Zinc',
+ 'Gallium','Germanium','Arsenic','Selenium','Bromine',
+ 'Krypton','Rubidium','Strontium','Yttrium','Zirconium',
+ 'Niobium','Molybdenum','Technetium','Ruthenium','Rhodium',
+ 'Palladium','Silver','Cadmium','Indium','Tin',
+ 'Antimony','Tellurium','Iodine','Xenon','Cesium',
+ 'Barium','Lanthanum','Cerium','Praseodymium','Neodymium',
+ 'Promethium','Samarium','Europium','Gadolinium','Terbium',
+ 'Dysprosium','Holmium','Erbium','Thulium','Ytterbium',
+ 'Lutetium','Hafnium','Tantalum','Tungsten','Rhenium',
+ 'Osmium','Iridium','Platinum','Gold','Mercury',
+ 'Thallium','Lead','Bismuth','Polonium','Astatine',
+ 'Radon','Francium','Radium','Actinium','Thorium',
+ 'Protactinium','Uranium','Neptunium','Plutonium','Americium',
+ 'Curium','Berkelium','Californium','Einsteinium','Fermium',
+ 'Mendelevium','Nobelium','Lawrencium','Rutherfordium','Dubnium',
+ 'Seaborgium','Bohrium','Hassium','Meitnerium','Darmstadtium',
+ 'Roentgenium','Copernicium','Nihonium','Flerovium','Moscovium',
+ 'Livermorium','Tennessine','Oganesson'];
+
+const sym  = Z => (Z >= 1 && Z <= 118) ? SYM[Z]  : '?';
+const name = Z => (Z >= 1 && Z <= 118) ? NAME[Z] : 'Unknown';
+
+// ── State ─────────────────────────────────────────────────────────
+let state = { Z1:1, A1:1, Z2:79, A2:197, r0:1.2, VC:null, R:null };
+let activeBtn = null;
+
+// ── Helpers ───────────────────────────────────────────────────────
+const iv = id => parseInt(document.getElementById(id).value)   || 0;
+const fv = id => parseFloat(document.getElementById(id).value) || 0;
+
+function setDisplay(n, Z, A) {
+  document.getElementById(`dZ${n}`).textContent  = (Z >= 1 && Z <= 118) ? Z : '?';
+  document.getElementById(`dA${n}`).textContent  = A > 0 ? A : '?';
+  document.getElementById(`dSym${n}`).textContent = sym(Z);
+  document.getElementById(`dName${n}`).textContent = name(Z);
+}
+
+function updateRxLabel(Z1, A1, Z2, A2) {
+  document.getElementById('rxLabel').textContent =
+    `${A1}${sym(Z1)}  +  ${A2}${sym(Z2)}`;
+}
+
+function setResult(id, val, dec) {
+  const el = document.getElementById(id);
+  if (val === null) { el.textContent = '—'; el.classList.add('empty'); }
+  else              { el.textContent = val.toFixed(dec); el.classList.remove('empty'); }
+}
+
+// ── Preset button ─────────────────────────────────────────────────
+function preset(btn, Z1, A1, Z2, A2) {
+  if (activeBtn) activeBtn.classList.remove('active');
+  btn.classList.add('active');
+  activeBtn = btn;
+
+  document.getElementById('Z1').value = Z1;
+  document.getElementById('A1').value = A1;
+  document.getElementById('Z2').value = Z2;
+  document.getElementById('A2').value = A2;
+  onInput();
+}
+
+// ── Live update on typing ─────────────────────────────────────────
+function onInput() {
+  if (activeBtn) { activeBtn.classList.remove('active'); activeBtn = null; }
+  const Z1 = iv('Z1'), A1 = iv('A1'), Z2 = iv('Z2'), A2 = iv('A2');
+  setDisplay(1, Z1, A1);
+  setDisplay(2, Z2, A2);
+  updateRxLabel(Z1, A1, Z2, A2);
+  calculate();
+}
+
+// ── Main calculation ──────────────────────────────────────────────
+function calculate() {
+  const Z1 = iv('Z1'), A1 = iv('A1'), Z2 = iv('Z2'), A2 = iv('A2');
+  const r0 = fv('r0') || 1.2;
+
+  if (Z1 < 1 || Z2 < 1 || A1 < 1 || A2 < 1) return;
+
+  const R  = r0 * (Math.cbrt(A1) + Math.cbrt(A2));
+  const VC = 1.44 * Z1 * Z2 / R;
+
+  state = { Z1, A1, Z2, A2, r0, VC, R };
+
+  setResult('rVC',  VC,           VC >= 10 ? 2 : 3);
+  setResult('rR',   R,            3);
+  document.getElementById('rZZ').textContent = (Z1 * Z2).toLocaleString();
+  document.getElementById('rZZ').classList.remove('empty');
+  setResult('rVCN', VC / (A1 + A2), 4);
+
+  requestAnimationFrame(() => drawChart(Z1, Z2, R, VC));
+}
+
+// ── Canvas chart ──────────────────────────────────────────────────
+function drawChart(Z1, Z2, R, VC) {
+  const canvas = document.getElementById('chart');
+  const dpr = window.devicePixelRatio || 1;
+  const W = Math.max(canvas.offsetWidth, 320);
+  const H = Math.max(200, Math.min(300, Math.round(W * 0.44)));
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const pad = { top:28, right:38, bottom:50, left:60 };
+  const pw = W - pad.left - pad.right;
+  const ph = H - pad.top  - pad.bottom;
+
+  // Axis ranges
+  const rMin = R * 0.12;
+  const rMax = R * 8.5;
+  const VMax = VC * 1.72;
+  const VMin = -VC * 0.38;
+
+  const toX = r => pad.left + (r - rMin) / (rMax - rMin) * pw;
+  const toY = V => pad.top  + ph * (1 - (V - VMin) / (VMax - VMin));
+
+  ctx.clearRect(0, 0, W, H);
+
+  const xR = toX(R);
+  const y0 = toY(0);
+
+  // ── Nuclear region shading ──
+  const nGrad = ctx.createLinearGradient(toX(rMin), 0, xR, 0);
+  nGrad.addColorStop(0, 'rgba(123,47,255,0.03)');
+  nGrad.addColorStop(1, 'rgba(123,47,255,0.14)');
+  ctx.fillStyle = nGrad;
+  ctx.fillRect(toX(rMin), pad.top, xR - toX(rMin), ph);
+
+  // ── Grid lines ──
+  ctx.strokeStyle = 'rgba(0,180,255,0.07)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const V = VMin + (VMax - VMin) * i / 5;
+    const y = toY(V);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + pw, y); ctx.stroke();
+  }
+  for (let i = 0; i <= 6; i++) {
+    const r = rMin + (rMax - rMin) * i / 6;
+    const x = toX(r);
+    ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, pad.top + ph); ctx.stroke();
+  }
+
+  // ── Zero line ──
+  ctx.strokeStyle = 'rgba(0,180,255,0.2)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(pad.left, y0); ctx.lineTo(pad.left + pw, y0); ctx.stroke();
+
+  // ── Y-axis ──
+  ctx.beginPath(); ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, pad.top + ph); ctx.stroke();
+
+  // ── Coulomb curve fill ──
+  ctx.beginPath();
+  let first = true;
+  for (let px = xR; px <= pad.left + pw; px += 1.5) {
+    const r = rMin + (px - pad.left) / pw * (rMax - rMin);
+    if (r < R * 0.998) continue;
+    const V = Math.min(1.44 * Z1 * Z2 / r, VMax * 1.05);
+    const y = toY(V);
+    if (first) { ctx.moveTo(px, y); first = false; }
+    else ctx.lineTo(px, y);
+  }
+  ctx.lineTo(pad.left + pw, y0);
+  ctx.lineTo(xR, y0);
+  ctx.closePath();
+  const fGrad = ctx.createLinearGradient(0, toY(VC), 0, y0);
+  fGrad.addColorStop(0, 'rgba(0,212,255,0.24)');
+  fGrad.addColorStop(1, 'rgba(0,212,255,0.0)');
+  ctx.fillStyle = fGrad;
+  ctx.fill();
+
+  // ── Coulomb curve stroke ──
+  ctx.beginPath();
+  first = true;
+  for (let px = xR; px <= pad.left + pw; px += 1.5) {
+    const r = rMin + (px - pad.left) / pw * (rMax - rMin);
+    if (r < R * 0.998) continue;
+    const V = Math.min(1.44 * Z1 * Z2 / r, VMax * 1.05);
+    const y = toY(V);
+    if (y < pad.top - 2 || y > pad.top + ph + 2) { first = true; continue; }
+    if (first) { ctx.moveTo(px, y); first = false; }
+    else ctx.lineTo(px, y);
+  }
+  ctx.strokeStyle = '#00d4ff';
+  ctx.lineWidth = 2.5;
+  ctx.shadowBlur = 9; ctx.shadowColor = 'rgba(0,212,255,0.6)';
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // ── Schematic nuclear well (dashed pink) ──
+  const wellY   = toY(-VC * 0.28);
+  const yPeak   = toY(VC);
+  const xLeft   = toX(rMin);
+  ctx.beginPath();
+  ctx.moveTo(xLeft, wellY);
+  ctx.lineTo(xR,    wellY);
+  ctx.lineTo(xR,    yPeak);
+  ctx.strokeStyle = 'rgba(220,100,255,0.68)';
+  ctx.lineWidth = 1.8;
+  ctx.setLineDash([5, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // ── Barrier reference dashes ──
+  ctx.strokeStyle = 'rgba(255,215,0,0.28)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(pad.left, yPeak); ctx.lineTo(xR, yPeak); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(xR, pad.top);    ctx.lineTo(xR, yPeak);  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // ── Barrier point (gold dot + halo) ──
+  ctx.beginPath(); ctx.arc(xR, yPeak, 8, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(255,215,0,0.2)'; ctx.lineWidth = 6;
+  ctx.stroke();
+  ctx.beginPath(); ctx.arc(xR, yPeak, 5, 0, Math.PI*2);
+  ctx.fillStyle = '#ffd700'; ctx.fill();
+
+  // ── Barrier annotation ──
+  const vcStr = VC >= 1000 ? `${(VC/1000).toFixed(2)} GeV` : `${VC.toFixed(2)} MeV`;
+  ctx.font = `bold 11px 'Segoe UI',sans-serif`;
+  ctx.fillStyle = '#ffd700'; ctx.textAlign = 'left';
+  const lblX = Math.min(xR + 9, pad.left + pw - 110);
+  const lblY = Math.max(yPeak - 9, pad.top + 13);
+  ctx.fillText(`V_C = ${vcStr}`, lblX, lblY);
+
+  // ── R label ──
+  ctx.fillStyle = '#8899bb'; ctx.font = `11px 'Segoe UI',sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`R = ${R.toFixed(2)} fm`, xR, pad.top + ph + 36);
+
+  // ── Axis tick labels ──
+  ctx.font = `10px 'Segoe UI',sans-serif`;
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 5; i++) {
+    const V = VMin + (VMax - VMin) * i / 5;
+    ctx.fillText(V.toFixed(1), pad.left - 6, toY(V) + 3.5);
+  }
+  ctx.textAlign = 'center';
+  for (let i = 0; i <= 6; i++) {
+    const r = rMin + (rMax - rMin) * i / 6;
+    ctx.fillText(r.toFixed(1), toX(r), pad.top + ph + 16);
+  }
+
+  // ── Axis labels ──
+  ctx.font = `11px 'Segoe UI',sans-serif`;
+  ctx.fillStyle = '#8899bb'; ctx.textAlign = 'center';
+  ctx.fillText('r  (fm)', pad.left + pw / 2, H - 4);
+  ctx.save();
+  ctx.translate(12, pad.top + ph / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('V(r)  (MeV)', 0, 0);
+  ctx.restore();
+
+  // ── Legend ──
+  ctx.font = `10px 'Segoe UI',sans-serif`;
+  // Cyan line
+  ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 2; ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(pad.left+8,pad.top+13); ctx.lineTo(pad.left+26,pad.top+13); ctx.stroke();
+  ctx.fillStyle = '#00d4ff'; ctx.textAlign = 'left';
+  ctx.fillText('Coulomb V(r)', pad.left+30, pad.top+17);
+  // Pink dashed line
+  ctx.strokeStyle = 'rgba(220,100,255,0.7)'; ctx.lineWidth = 1.5; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(pad.left+128,pad.top+13); ctx.lineTo(pad.left+146,pad.top+13); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(220,110,255,0.85)';
+  ctx.fillText('Nuclear (schematic)', pad.left+150, pad.top+17);
+}
+
+// ── Resize ─────────────────────────────────────────────────────────
+let rzTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(rzTimer);
+  rzTimer = setTimeout(() => {
+    if (state.VC !== null) drawChart(state.Z1, state.Z2, state.R, state.VC);
+  }, 120);
+});
+
+// ── Init ───────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  requestAnimationFrame(() => {
+    // Mark first preset active
+    const btn = document.querySelector('.preset-btn:last-child');
+    // Actually call p+Au preset
+    const auBtn = [...document.querySelectorAll('.preset-btn')].find(b => b.textContent.includes('Au'));
+    if (auBtn) { auBtn.classList.add('active'); activeBtn = auBtn; }
+    calculate();
+  });
+});
+</script>
+</body>
+</html>
