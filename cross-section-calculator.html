@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nuclear Cross-Section Calculator</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --card: #1c2330;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --accent2: #3fb950;
+      --accent3: #f78166;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --text-dim: #6e7681;
+      --glow: rgba(88, 166, 255, 0.15);
+      --glow2: rgba(63, 185, 80, 0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      padding: 32px 16px 64px;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .header .vr-tag {
+      display: inline-block;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+    .header h1 {
+      font-size: clamp(22px, 4vw, 36px);
+      font-weight: 700;
+      background: linear-gradient(135deg, #58a6ff 0%, #79c0ff 40%, #3fb950 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+    .header p {
+      color: var(--text-muted);
+      font-size: 14px;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* ── Layout ── */
+    .container { max-width: 960px; margin: 0 auto; }
+
+    /* ── Formula card ── */
+    .formula-card {
+      background: linear-gradient(135deg, rgba(88,166,255,.07), rgba(63,185,80,.05));
+      border: 1px solid rgba(88,166,255,.22);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .formula-card .icon {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+    .formula-card .formula-text {
+      font-size: 16px;
+      color: var(--text-muted);
+      line-height: 2;
+    }
+    .formula-card .formula-text strong {
+      color: var(--accent);
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+    }
+
+    /* ── Section groups ── */
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .section-label .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Input grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+    /* ── Field ── */
+    .field {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .field:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--glow);
+    }
+    .field label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+    .field .input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .field input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: 'Courier New', monospace;
+      font-weight: 600;
+      outline: none;
+      transition: border-color .15s;
+      min-width: 0;
+    }
+    .field input:focus { border-color: var(--accent); }
+    .field input::placeholder { color: var(--text-dim); font-weight: 400; font-size: 13px; }
+    .field .unit {
+      font-size: 14px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 9px 10px;
+      line-height: 1;
+    }
+
+    /* ── Buttons ── */
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+    .btn {
+      flex: 1;
+      min-width: 140px;
+      height: 52px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform .1s, opacity .15s, box-shadow .15s;
+      letter-spacing: .02em;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-calculate {
+      background: linear-gradient(135deg, #1f6feb, #388bfd);
+      color: #fff;
+      box-shadow: 0 4px 24px rgba(56,139,253,.3);
+    }
+    .btn-calculate:hover { box-shadow: 0 4px 32px rgba(56,139,253,.5); }
+    .btn-clear {
+      background: var(--card);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .btn-clear:hover { background: var(--surface); color: var(--text); }
+
+    /* ── Results ── */
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .result-card {
+      border-radius: 14px;
+      padding: 22px 24px;
+      border: 1px solid;
+      position: relative;
+      overflow: hidden;
+      transition: box-shadow .2s;
+    }
+    .result-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: .06;
+      pointer-events: none;
+    }
+    .result-card.diff {
+      background: linear-gradient(135deg, rgba(88,166,255,.08), rgba(88,166,255,.03));
+      border-color: rgba(88,166,255,.3);
+    }
+    .result-card.diff::before { background: radial-gradient(circle at top left, #58a6ff, transparent 60%); }
+    .result-card.total {
+      background: linear-gradient(135deg, rgba(63,185,80,.08), rgba(63,185,80,.03));
+      border-color: rgba(63,185,80,.3);
+    }
+    .result-card.total::before { background: radial-gradient(circle at top left, #3fb950, transparent 60%); }
+
+    .result-card .result-label {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .result-card.diff .result-label { color: var(--accent); }
+    .result-card.total .result-label { color: var(--accent2); }
+
+    .result-card .result-symbol {
+      font-size: 22px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+    }
+    .result-card .result-value {
+      font-size: clamp(20px, 3vw, 28px);
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+      letter-spacing: .02em;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .result-card.diff .result-value { color: #79c0ff; }
+    .result-card.total .result-value { color: #56d364; }
+
+    .result-card .result-unit {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    .result-placeholder {
+      color: var(--text-dim);
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    /* ── Error state ── */
+    .error-msg {
+      display: none;
+      color: var(--accent3);
+      font-size: 13px;
+      margin-top: 8px;
+      padding: 10px 14px;
+      background: rgba(247,129,102,.08);
+      border: 1px solid rgba(247,129,102,.25);
+      border-radius: 8px;
+    }
+    .error-msg.visible { display: block; }
+
+    /* ── Footer note ── */
+    .footnote {
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 14px;
+      margin-top: 40px;
+      line-height: 2;
+    }
+
+    @media (max-width: 480px) {
+      .formula-card { flex-direction: column; }
+      .actions { flex-direction: column; }
+      .btn { min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="vr-tag">VR</div>
+    <h1>Cross-Section Calculator</h1>
+    <p>Compute differential and total nuclear reaction cross sections from detector and beam parameters.</p>
+  </div>
+
+  <!-- Formula hint -->
+  <div class="formula-card">
+    <div class="icon">&#x1F4D0;</div>
+    <div class="formula-text">
+      <strong>d&sigma;/d&Omega;</strong> &nbsp;=&nbsp;
+      <strong>N &middot; q<sub>e</sub> &middot; A</strong> &nbsp;&divide;&nbsp;
+      <strong>( Q &middot; &rho; &middot; N<sub>A</sub> &middot; f% &middot; &epsilon; &middot; 10<sup>&minus;27</sup> &middot; &Omega; )</strong>
+      <br>
+      <strong>&Omega; = 2&pi;(1 &minus; d / &radic;(r&sup2; + d&sup2;))</strong>
+      &nbsp;&nbsp;&nbsp;&middot;&nbsp;&nbsp;&nbsp;
+      <strong>&sigma;<sub>total</sub> = 4&pi; &middot; d&sigma;/d&Omega;</strong>
+    </div>
+  </div>
+
+  <!-- Section: Projectile & Target -->
+  <div class="section-label">
+    <span class="dot" style="background:#58a6ff"></span>
+    Projectile &amp; Target Nuclei
+  </div>
+  <div class="grid grid-3">
+    <div class="field">
+      <label>Atomic number of projectile</label>
+      <div class="input-row">
+        <input id="Zproj" type="number" placeholder="e.g. 2" min="1" value="2" />
+        <span class="unit">Z</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Mass number of projectile</label>
+      <div class="input-row">
+        <input id="Aproj" type="number" placeholder="e.g. 4" min="1" value="4" />
+        <span class="unit">A</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Atomic number of target</label>
+      <div class="input-row">
+        <input id="Ztarget" type="number" placeholder="e.g. 28" min="1" value="28" />
+        <span class="unit">Z</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Mass number of target</label>
+      <div class="input-row">
+        <input id="Atarget" type="number" placeholder="e.g. 58" min="1" value="58" />
+        <span class="unit">A</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Mass % of nuclei in target</label>
+      <div class="input-row">
+        <input id="Percent" type="number" placeholder="e.g. 68.1" min="0" max="100" step="any" value="68.1" />
+        <span class="unit">%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Beam -->
+  <div class="section-label">
+    <span class="dot" style="background:#d2a8ff"></span>
+    Beam Parameters
+  </div>
+  <div class="grid">
+    <div class="field">
+      <label>Total charge incident on target</label>
+      <div class="input-row">
+        <input id="Charge" type="number" placeholder="e.g. 100" min="0" step="any" value="100" />
+        <span class="unit">nC</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Charge state of projectile</label>
+      <div class="input-row">
+        <input id="ChargeState" type="number" placeholder="e.g. 2" min="1" step="1" value="2" />
+        <span class="unit">e</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Target -->
+  <div class="section-label">
+    <span class="dot" style="background:#ffa657"></span>
+    Target Properties
+  </div>
+  <div class="grid">
+    <div class="field">
+      <label>Areal density of target</label>
+      <div class="input-row">
+        <input id="Areal" type="number" placeholder="e.g. 1.5e-3" min="0" step="any" value="0.0015" />
+        <span class="unit">g/cm&sup2;</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Detector -->
+  <div class="section-label">
+    <span class="dot" style="background:#3fb950"></span>
+    Detector &amp; Measurement
+  </div>
+  <div class="grid grid-3">
+    <div class="field">
+      <label>Radius of detector</label>
+      <div class="input-row">
+        <input id="Radius" type="number" placeholder="e.g. 2.5" min="0" step="any" value="2.5" />
+        <span class="unit">cm</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Distance from target to detector</label>
+      <div class="input-row">
+        <input id="Distance" type="number" placeholder="e.g. 15" min="0" step="any" value="15" />
+        <span class="unit">cm</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Full-energy efficiency of detector</label>
+      <div class="input-row">
+        <input id="Eff" type="number" placeholder="e.g. 0.85" min="0" max="1" step="any" value="0.85" />
+        <span class="unit">&mdash;</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Area under full-energy peak</label>
+      <div class="input-row">
+        <input id="Area" type="number" placeholder="e.g. 12500" min="0" step="any" value="12500" />
+        <span class="unit">counts</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- Buttons -->
+  <div class="actions">
+    <button class="btn btn-calculate" onclick="calculate()">Calculate Cross Section</button>
+    <button class="btn btn-clear" onclick="clearAll()">Clear All</button>
+  </div>
+
+  <!-- Results -->
+  <div class="results">
+    <div class="result-card diff">
+      <div class="result-label">Differential Cross Section</div>
+      <div class="result-symbol">d&sigma;/d&Omega;</div>
+      <div class="result-value" id="outDiff"><span class="result-placeholder">&#x2014;</span></div>
+      <div class="result-unit">milli barn / sr</div>
+    </div>
+    <div class="result-card total">
+      <div class="result-label">Total Cross Section</div>
+      <div class="result-symbol">&sigma;<sub>total</sub></div>
+      <div class="result-value" id="outTotal"><span class="result-placeholder">&#x2014;</span></div>
+      <div class="result-unit">milli barn</div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    1 barn = 10&minus;&sup2;&sup4; cm&sup2; &nbsp;&middot;&nbsp; N<sub>A</sub> = 6.022 &times; 10<sup>23</sup> mol<sup>&minus;1</sup> &nbsp;&middot;&nbsp; e = 1.6 &times; 10<sup>&minus;19</sup> C
+    <br><br>
+    <a href="https://www.vranga.in" target="_blank" rel="noopener"
+       style="color:var(--text-dim);text-decoration:none;border-bottom:1px solid var(--border);padding-bottom:1px;transition:color .15s;"
+       onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-dim)'">www.vranga.in</a>
+  </div>
+
+</div>
+
+<script>
+  function getVal(id) {
+    return parseFloat(document.getElementById(id).value);
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.classList.add('visible');
+  }
+
+  function hideError() {
+    document.getElementById('errorMsg').classList.remove('visible');
+  }
+
+  function calculate() {
+    hideError();
+
+    const fields = {
+      'Area (counts)': 'Area',
+      'Charge state': 'ChargeState',
+      'Mass no. of target (A)': 'Atarget',
+      'Total charge (nC)': 'Charge',
+      'Areal density (g/cm²)': 'Areal',
+      'Mass % of target nuclei': 'Percent',
+      'Detector efficiency': 'Eff',
+      'Detector radius (cm)': 'Radius',
+      'Distance (cm)': 'Distance',
+    };
+
+    for (const [label, id] of Object.entries(fields)) {
+      const v = getVal(id);
+      if (isNaN(v)) {
+        showError(`Missing or invalid input: "${label}"`);
+        return;
+      }
+    }
+
+    const N      = getVal('Area');
+    const q      = getVal('ChargeState');
+    const A      = getVal('Atarget');
+    const Q      = getVal('Charge');
+    const rho    = getVal('Areal');
+    const pct    = getVal('Percent');
+    const eff    = getVal('Eff');
+    const r      = getVal('Radius');
+    const d      = getVal('Distance');
+
+    if (Q === 0 || rho === 0 || pct === 0 || eff === 0) {
+      showError('Q, areal density, mass %, and efficiency must all be non-zero.');
+      return;
+    }
+
+    const solidAngle = 2.0 * Math.PI * (1.0 - d / Math.sqrt(r * r + d * d));
+
+    if (solidAngle <= 0) {
+      showError('Detector geometry yields a non-positive solid angle. Check radius and distance.');
+      return;
+    }
+
+    const numerator   = N * q * 1.6e-19 * 100.0 * A;
+    const denominator = Q * 1.0e-9 * rho * pct * 6.022e23 * eff * 1.0e-27 * solidAngle;
+    const diffCross   = numerator / denominator;
+    const totalCross  = 4.0 * Math.PI * diffCross;
+
+    document.getElementById('outDiff').innerHTML  = formatResult(diffCross);
+    document.getElementById('outTotal').innerHTML = formatResult(totalCross);
+  }
+
+  function formatResult(val) {
+    if (!isFinite(val)) return '<span class="result-placeholder">Error</span>';
+    const s = val.toPrecision(6);
+    // also show scientific notation if number is very large or very small
+    const abs = Math.abs(val);
+    if (abs > 0 && (abs >= 1e6 || abs < 1e-3)) {
+      return val.toExponential(4) + ' <span style="font-size:13px;color:var(--text-muted)">(' + s + ')</span>';
+    }
+    return s;
+  }
+
+  function clearAll() {
+    const ids = ['Zproj','Aproj','Ztarget','Atarget','Charge','ChargeState',
+                 'Areal','Percent','Radius','Distance','Eff','Area'];
+    ids.forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('outDiff').innerHTML  = '<span class="result-placeholder">&#x2014;</span>';
+    document.getElementById('outTotal').innerHTML = '<span class="result-placeholder">&#x2014;</span>';
+    hideError();
+  }
+
+  // Allow Enter key to trigger calculation
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') calculate();
+  });
+
+  // Auto-calculate on load with default values
+  window.addEventListener('load', calculate);
+</script>
+</body>
+</html>
