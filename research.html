@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V. Ranga — Research</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  /* ── TOKENS ─────────────────────────────────────────────── */
+  :root {
+    --bg:       #f7f8fa;
+    --surface:  #ffffff;
+    --panel:    #f0f1f5;
+    --border:   rgba(0,0,0,0.09);
+    --accent:   #0d6efd;
+    --accent2:  #6c47d9;
+    --text:     #111827;
+    --muted:    #6b7280;
+    --faint:    #b0b8c8;
+    --mono:     'IBM Plex Mono', monospace;
+    --sans:     'Inter', system-ui, sans-serif;
+    --radius:   6px;
+    --max:      860px;
+  }
+
+  /* ── RESET ──────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── LAYOUT ─────────────────────────────────────────────── */
+  .container { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+
+  /* ── HEADER / HERO ──────────────────────────────────────── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 56px 0 48px;
+  }
+  .site-link {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    margin-bottom: 20px;
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .site-link:hover { color: var(--accent); text-decoration: none; }
+  h1 {
+    font-size: clamp(28px, 5vw, 42px);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+  h1 span { color: var(--accent); font-weight: 500; }
+  .tagline {
+    color: var(--muted);
+    font-size: 15px;
+    max-width: 560px;
+    line-height: 1.6;
+    margin-bottom: 28px;
+  }
+
+  /* ── STATS BAR ──────────────────────────────────────────── */
+  .stats {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .stat-n {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .stat-l {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .scholar-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    margin-top: 28px;
+    transition: background 0.15s;
+  }
+  .scholar-link:hover { background: rgba(13,110,253,0.07); text-decoration: none; }
+
+  /* ── NAV / FILTER ───────────────────────────────────────── */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+  .filter-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: 1px solid var(--faint);
+    background: transparent;
+    color: var(--muted);
+    padding: 5px 12px;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #ffffff;
+    font-weight: 500;
+  }
+
+  /* ── PAPER CARD ─────────────────────────────────────────── */
+  .papers { padding: 32px 0 80px; display: flex; flex-direction: column; gap: 0; }
+  .paper {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 0 20px;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--border);
+    transition: opacity 0.2s;
+  }
+  .paper.hidden { display: none; }
+  .paper-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--faint);
+    padding-top: 4px;
+    text-align: right;
+    user-select: none;
+  }
+  .paper-body {}
+  .paper-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 99px;
+    border: 1px solid;
+  }
+  .tag-detector   { color: #4fd1c5; border-color: rgba(79,209,197,0.3); background: rgba(79,209,197,0.06); }
+  .tag-nuclear    { color: #7c6af7; border-color: rgba(124,106,247,0.3); background: rgba(124,106,247,0.06); }
+  .tag-perovskite { color: #f6ad55; border-color: rgba(246,173,85,0.3);  background: rgba(246,173,85,0.06); }
+  .tag-radiation  { color: #68d391; border-color: rgba(104,211,145,0.3); background: rgba(104,211,145,0.06); }
+  .tag-simulation { color: #fc8181; border-color: rgba(252,129,129,0.3); background: rgba(252,129,129,0.06); }
+  .tag-pet        { color: #90cdf4; border-color: rgba(144,205,244,0.3); background: rgba(144,205,244,0.06); }
+
+  .paper-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.45;
+    margin-bottom: 6px;
+  }
+  .paper-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+  }
+  .paper-meta .journal { color: var(--accent2); }
+  .paper-year { color: var(--faint); }
+  .paper-abstract {
+    font-size: 13.5px;
+    color: var(--muted);
+    line-height: 1.65;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+  }
+  .paper-abstract.open {
+    max-height: 400px;
+    opacity: 1;
+  }
+  .paper-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .btn-paper {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    border: 1px solid rgba(79,209,197,0.35);
+    background: transparent;
+    padding: 5px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .btn-paper:hover { background: rgba(13,110,253,0.07); text-decoration: none; }
+  .btn-abstract {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 5px 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 0.15s;
+  }
+  .btn-abstract:hover { color: var(--text); }
+  .btn-abstract .arrow { transition: transform 0.2s; display: inline-block; }
+  .btn-abstract.open .arrow { transform: rotate(90deg); }
+
+  /* ── FOOTER ─────────────────────────────────────────────── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--faint);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ── RESPONSIVE ─────────────────────────────────────────── */
+  @media (max-width: 600px) {
+    .paper { grid-template-columns: 1fr; }
+    .paper-num { text-align: left; padding-top: 0; margin-bottom: 6px; }
+    .stats { gap: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ── HERO ─────────────────────────────────────────────── -->
+  <header>
+    <a class="site-link" href="https://www.vranga.in">www.vranga.in</a>
+    <h1>V. <span>Ranga</span><br>Research</h1>
+    <p class="tagline">
+      Experimental nuclear physics with a focus on scintillator characterisation,
+      nuclear reaction cross-sections, and novel detector materials for
+      γ-ray spectroscopy and radiation measurement.
+    </p>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-n" id="total-papers">15</span>
+        <span class="stat-l">Publications</span>
+      </div>
+      <div class="stat">
+        <span class="stat-n">2017–2026</span>
+        <span class="stat-l">Active span</span>
+      </div>
+      <div class="stat">
+        <span class="stat-n">5</span>
+        <span class="stat-l">Research areas</span>
+      </div>
+    </div>
+    <a class="scholar-link" href="https://scholar.google.co.in/citations?user=kNIOTdgAAAAJ&hl=en" target="_blank">
+      ↗ Google Scholar profile
+    </a>
+  </header>
+
+  <!-- ── FILTERS ───────────────────────────────────────────── -->
+  <div class="filter-bar">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="detector">Detectors</button>
+    <button class="filter-btn" data-filter="nuclear">Nuclear reactions</button>
+    <button class="filter-btn" data-filter="perovskite">Perovskites</button>
+    <button class="filter-btn" data-filter="radiation">Radiological</button>
+    <button class="filter-btn" data-filter="pet">TOF-PET</button>
+  </div>
+
+  <!-- ── PAPERS ────────────────────────────────────────────── -->
+  <!--
+    HOW TO ADD A NEW PAPER:
+    Copy one <article class="paper"> block below and fill in:
+      data-tags   : space-separated tags from: detector nuclear perovskite radiation pet simulation
+      data-year   : publication year
+      .paper-title: full paper title
+      .journal    : journal name
+      .paper-year : year again (displayed)
+      .paper-abstract > p: your abstract text
+      href in .btn-paper: the DOI link
+  -->
+
+  <section class="papers" id="papers-list">
+
+    <article class="paper" data-tags="nuclear simulation" data-year="2024">
+      <div class="paper-num">01</div>
+      <div class="paper-body">
+        <div class="paper-tags">
+          <span class="tag tag-nuclear">Nuclear reactions</span>
+          <span class="tag tag-simulation">Simulation</span>
+        </div>
+        <p class="paper-title">Measurement of proton-induced absolute production cross-section of 6.13, 6.92 and 7.12 MeV γ-rays from ¹⁶O(p,p′γ)¹⁶O reaction</p>
+        <div class="paper-meta">
+          <span class="journal">J. Phys. G: Nucl. Part. Phys.</span>
+          <span class="paper-year">2024</span>
+        </div>
+        <div class="paper-abstract">
+          <p>Absolute production cross-sections of 6.13, 6.92 and 7.12 MeV γ-rays from the ¹⁶O(p,p′γ)¹⁶O reaction are reported for incident proton energies of 8–16 MeV. Angular distributions were measured at 9 MeV. A phenomenological optical model potential (OMP) was developed and optimised using elastic, polarisation and total reaction data. Nuclear structure effects — low-lying state couplings, resonances, and deformation — were included. Calculated cross-sections agree well with measurements, though finer details highlight complex roles of channel coupling and resonances at low energies.</p>
+        </div>
+        <div class="paper-actions">
+          <a class="btn-paper" href="https://dx.doi.org/10.1088/1361-6471/ad1fd3" target="_blank">↗ Full paper</a>
+          <button class="btn-abstract" onclick="toggleAbstract(this)"><span class="arrow">›</span> Abstract</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="paper" data-tags="detector simulation" data-year="2024">
+      <div class="paper-num">02</div>
+      <div class="paper-body">
+        <div class="paper-tags">
+          <span class="tag tag-detector">Detectors</span>
+          <span class="tag tag-simulation">Simulation</span>
+        </div>
+        <p class="paper-title">Response of LaBr₂.₈₅Cl₀.₁₅:Ce, LaBr₃:Ce and NaI:Tl crystals to fast and thermal neutrons</p>
+        <div class="paper-meta">
+          <span class="journal">Nucl. Instrum. Methods Phys. Res. A</span>
+          <span class="paper-year">2024</span>
+        </div>
+        <div class="paper-abstract">
+          <p>First report of the neutron response of the newly marketed LaBr₂.₈₅Cl₀.₁₅:Ce crystal. Direct response for fast and thermal neutrons was measured using a calibrated Am-Be source alongside LaBr₃:Ce and NaI:Tl references. GEANT4 simulations were used to isolate neutron events from γ-ray backgrounds. Fast neutron detection efficiency of all three detectors is reported.</p>
+        </div>
+        <div class="paper-actions">
+          <a class="btn-paper" href="https://doi.org/10.1016/j.nima.2024.169178" target="_blank">↗ Full paper</a>
+          <button class="btn-abstract" onclick="toggleAbstract(this)"><span class="arrow">›</span> Abstract</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="paper" data-tags="detector simulation" data-year="2022">
+      <div class="paper-num">03</div>
+      <div class="paper-body">
+        <div class="paper-tags">
+          <span class="tag tag-detector">Detectors</span>
+          <span class="tag tag-simulation">Simulation</span>
+        </div>
+        <p class="paper-title">Characterisation of a 1″×1″ LaBr₂.₈₅Cl₀.₁₅:Ce crystal for γ-rays up to 4.4 MeV</p>
+        <div class="paper-meta">
+          <span class="journal">Nucl. Instrum. Methods Phys. Res. A</span>
+          <span class="paper-year">2022</span>
+        </div>
+        <div class="paper-abstract">
+          <p>First performance report on the newly manufactured LaBr₂.₈₅Cl₀.₁₅:Ce (LBC) crystal. Complete characterisation includes energy resolution (~3.8% at 662 keV), timing resolution (422/364 ps for ²²Na/⁶⁰Co), internal activity, and full-energy detection efficiency from 276–4439 keV. GEANT4 simulations reproduced experimental spectra. No significant difference from standard LaBr₃:Ce of similar volume was found.</p>
+        </div>
+        <div class="paper-actions">
+          <a class="btn-paper" href="https://doi.org/10.1016/j.nima.2022.167369" target="_blank">↗ Full paper</a>
+          <button class="btn-abstract" onclick="toggleAbstract(this)"><span class="arrow">›</span> Abstract</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="paper" data-tags="detector" data-year="2017">
+      <div class="paper-num">04</div>
+      <div class="paper-body">
+        <div class="paper-tags">
+          <span class="tag tag-detector">Detectors</span>
+        </div>
+        <p class="paper-title">Intrinsic resolution of Compton electrons in CeBr₃ scintillator using compact CCT</p>
+        <div class="paper-meta">
+          <span class="journal">IEEE Trans. Nucl. Sci.</span>
+          <span class="paper-year">2017</span>
+        </div>
+        <div class="paper-abstract">
+          <p>First measurement of intrinsic energy resolution of Compton electrons in a 1″×1″ CeBr₃ detector using ¹³⁷Cs, ²²Na, and ⁶⁰Co sources with the Compton coincidence technique and a compact PIXIE-4 DAQ. Resolution measured in 0.1–1 MeV range. Results indicate δ-ray contribution as a major factor in intrinsic resolution of CeBr₃.</p>
+        </div>
+        <div class="paper-actions">
+          <a class="btn-paper" href="https://doi.org/10.1109/TNS.2017.2779888" target="_blank">↗ Full paper</a>
+          <button class="btn-abstract" onclick="toggleAbstract(this)"><span class="arrow">›</span> Abstract</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="paper" data-tags="nuclear simulation" data-year="2024">
+      <div class="paper-num">05</div>
+      <div class="paper-body">
+        <div class="paper-tags">
+          <span class="tag tag-nuclear">Nuclear reactions</span>
+          <span class="tag tag-simulation">Simulation</span>
+        </div>
+        <p class="paper-title">Production cross-section of γ-rays from (p,p′γ) reactions: measurements and theoretical analysis</p>
+        <div class="paper-meta">
+          <span class="journal">Few-Body Systems</span>
+          <span class="paper-year">2024</span>
+        </div>
+        <div class="paper-abstract">
+          <p>Review of absolute production cross-section measurements of γ-rays from (p,p′γ) reactions on ¹²C and ¹⁶O at 8–16 MeV proton energies. Angular distributions measured. Detailed optical model analysis includes nuclear structure effects (state coupling, resonances, deformation). Results demonstrate the complexity of channel coupling and resonances in light-mass nuclei at low energies.</p>
+        </div>
+        <div class="paper-actions">
+          <a class="btn-paper" href="https://doi.org/10.1007/s00601-024-01976-4" target="_blank">↗ Full paper</a>
+          <button class="btn-abstract" onclick="toggleAbstract(this)"><span class="arrow">›</span> Abstract</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="paper" data-tags="detector" data-year="2020">
+      <div class="paper-num">06</div>
+      <div class="paper-body">
+        <div class="paper-tags">
+          <span class="tag tag-detector">Detectors</span>
+        </div>
+        <p class="paper-title">Characterization of a Sr co-doped LaBr₃:Ce detector for γ-ray spectroscopy</p>
+        <div class="paper-meta">
+          <span class="journal">Nucl. Instrum. Methods Phys. Res. A</span>
+          <span class="paper-year">2020</span>
+        </div>
+        <div class="paper-abstract">
+          <p>Thorough characterisation of a 1.5″×1.5″ Sr²⁺ co-doped LaBr₃:Ce crystal covering energy resolution, timing resolution, internal activity, and efficiency from 661.7 keV to 4.43 MeV. Energy resolution at 662 keV shows no improvement over standard LaBr₃:Ce, while timing resolution is inferior. Findings are discussed in context of prior literature and suggest more measurements are needed before Sr co-doping is declared superior.</p>
+        </div>
+        <div class="paper-actions">
+          <a class="btn-paper" href="https://doi.org/10.1016/j.nima.2020.164567" target="_blank">↗ Full paper</a>
+          <button class="btn-abstract" onclick="toggleAbstract(this)"><span class="arrow">›</span> Abstract</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="paper" data-tags="detector simulation" data-year="2021">
+      <div class="paper-num">07</div>
+      <div class="paper-body">
+        <div class="paper-tags">
+          <span class="tag tag-detector">Detectors</span>
+          <span class="tag tag-simulation">Simulation</span>
+        </div>
+        <p class="paper-title">Characterisation of a small volume (1″×1″) CeBr₃ crystal for γ-ray measurements up to 4.4 MeV</p>
+        <div class="paper-meta">
+          <span class="journal">JINST</span>
+          <span class="paper-year">2021</span>
+        </div>
+        <div class="paper-abstract">
+          <p>Complete characterisation of a 1″×1″ CeBr₃ crystal: energy resolution (4.7% at 662 keV with ET9266B; 4.3% with Hamamatsu R10233), timing resolution (310 ps at ⁶⁰Co), absolute photo-peak efficiency (13.2%), and internal activity (&lt;0.045 counts cm⁻³ s⁻¹). GEANT4 simulations matched experimental efficiency. CeBr₃ is marginally inferior to LaBr₃:Ce in resolution but superior in internal activity.</p>
+        </div>
+        <div class="paper-actions">
+          <a class="btn-paper" href="https://dx.doi.org/10.1088/1748-0221/16/01/T01004" target="_blank">↗ Full paper</a>
+          <button class="btn-abstract" onclick="toggleAbstract(this)"><span class="arrow">›</span> Abstract</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="paper" data-tags="nuclear" data-year="2023">
+      <div class="paper-num">08</div>
+      <div class="paper-body">
+        <div class="paper-tags">
+          <span class="tag tag-nuclear">Nuclear reactions</span>
+        </div>
+        <p class="paper-title">Precise determination of quadrupole and hexadecapole deformation parameters of the sd-shell nucleus ²⁸Si</p>
+        <div class="paper-meta">
+          <span class="journal">Phys. Lett. B</span>
+          <span class="paper-year">2023</span>
+        </div>
+        <div class="paper-abstract">
+          <p>Quasi-elastic scattering of ²⁸Si on ⁹⁰Zr near the Coulomb barrier, analysed with Bayesian coupled-channels calculations. Unambiguously confirms ²⁸Si as oblate (β₂ = −0.38 ± 0.01), in excellent agreement with electromagnetic probes. First determination of hexadecapole deformation (β₄ = +0.03 ± 0.01) via QEL scattering. Results agree with Skyrme-Hartree-Fock theory.</p>
+        </div>
+        <div class="paper-actions">
+          <a class="btn-paper" href="https://doi.org/10.1016/j.physletb.2023.138120" target="_blank">↗ Full paper</a>
+          <button class="btn-abstract" onclick="toggleAbstract(this)"><span class="arrow">›</span> Abstract</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="paper" data-tags="nuclear" data-year="2024">
+      <div class="paper-num">09</div>
+      <div class="paper-body">
+        <div class="paper-tags">
+          <span class="tag tag-nuclear">Nuclear reactions</span>
+        </div>
+        <p class="paper-title">Measurements of evaporation residue cross sections and ER-gated γ-ray fold distributions for the ³²S + ¹⁵⁴Sm system</p>
+        <div class="paper-meta">
+          <span class="journal">Phys. Rev. C</span>
+          <span class="paper-year">2024</span>
+        </div>
+        <div class="paper-abstract">
+          <p>Evaporation residue cross sections and γ-ray fold distributions measured for ³²S + ¹⁵⁴Sm at 148–191 MeV. ER cross sections are much higher than a previous measurement with ⁴⁸Ti + ¹³⁸Ba (same compound nucleus ¹⁸⁶Pt), demonstrating a strong entrance-channel effect. Dinuclear system model calculations reproduce data by including incomplete fusion at higher energies.</p>
+        </div>
+        <div class="paper-actions">
+          <a class="btn-paper" href="https://doi.org/10.1103/PhysRevC.110.044610" target="_blank">↗ Full paper</a>
+          <button class="btn-abstract" onclick="toggleAbstract(this)"><span class="arrow">›</span> Abstract</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="paper" data-tags="nuclear" data-year="2026">
+      <div class="paper-num">10</div>
+      <div class="paper-body">
+        <div class="paper-tags">
+          <span class="tag tag-nuclear">Nuclear reactions</span>
+        </div>
+        <p class="paper-title">Quasi-elastic scattering for the nuclear ground state structure: an intriguing case of ³⁰Si</p>
+        <div class="paper-meta">
+          <span class="journal">Phys. Lett. B</span>
+          <span class="paper-year">2026</span>
+        </div>
+        <div class="paper-abstract">
+          <p>QEL scattering of ²⁸,³⁰Si off ⁹⁰Zr near the Coulomb barrier. While ²⁸Si is uniquely oblate, coupled-channels analysis of ³⁰Si shows oblate, prolate, and spherical descriptions are equally compatible with data — a potential signature of shape fluctuations. Shell-model calculations reveal a sudden structural change from ²⁸Si to ³²Si, consistent with ³⁰Si lacking a well-defined intrinsic shape.</p>
+        </div>
+        <div class="paper-actions">
+          <a class="btn-paper" href="https://doi.org/10.1016/j.physletb.2026.140239" target="_blank">↗ Full paper</a>
+          <button class="btn-abstract" onclick="toggleAbstract(this)"><span class="arrow">›</span> Abstract</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="paper" data-tags="pet detector simulation" data-year="2025">
+      <div class="paper-num">11</div>
+      <div class="paper-body">
+        <div class="paper-tags">
+          <span class="tag tag-pet">TOF-PET</span>
+          <span class="tag tag-detector">Detectors</span>
+          <span class="tag tag-simulation">Simulation</span>
+        </div>
+        <p class="paper-title">3D-printed plastic scintillator: a potential avenue for hetero-structured radiation detectors</p>
+        <div class="paper-meta">
+          <span class="journal">IEEE Trans. Nucl. Sci.</span>
+          <span class="paper-year">2025</span>
+        </div>
+        <div class="paper-abstract">
+          <p>Formulation and fabrication of a 3D-printed plastic scintillator as filler material for heterostructure TOF-PET detectors. The printed scintillator shows faster rise and decay times than commercial EJ-200. Coincidence time resolution of 225 ps was measured. GEANT4 simulations confirm performance advantages of complex heterostructure geometries enabled by 3D printing.</p>
+        </div>
+        <div class="paper-actions">
+          <a class="btn-paper" href="https://doi.org/10.1109/TNS.2025.3580284" target="_blank">↗ Full paper</a>
+          <button class="btn-abstract" onclick="toggleAbstract(this)"><span class="arrow">›</span> Abstract</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="paper" data-tags="perovskite detector simulation" data-year="2025">
+      <div class="paper-num">12</div>
+      <div class="paper-body">
+        <div class="paper-tags">
+          <span class="tag tag-perovskite">Perovskites</span>
+          <span class="tag tag-detector">Detectors</span>
+          <span class="tag tag-simulation">Simulation</span>
+        </div>
+        <p class="paper-title">Scintillation properties of CsCu₂I₃ perovskite single crystal grown by room temperature solution processing</p>
+        <div class="paper-meta">
+          <span class="journal">IEEE Trans. Nucl. Sci.</span>
+          <span class="paper-year">2025</span>
+        </div>
+        <div class="paper-abstract">
+          <p>Growth and characterisation of 1D CsCu₂I₃ single crystal via solvent evaporation at room temperature. Orthorhombic structure with Cmcm space group, yellow photoluminescence from self-trapped exciton emission (~230 nm Stokes shift). Light output ~20,000 ph/MeV. Energy resolution 11.57% at 662 keV — superior to ITC-grown crystals. GEANT4 simulations of intrinsic photopeak efficiencies compared with NaI:Tl and BGO.</p>
+        </div>
+        <div class="paper-actions">
+          <a class="btn-paper" href="https://doi.org/10.1109/TNS.2025.3595803" target="_blank">↗ Full paper</a>
+          <button class="btn-abstract" onclick="toggleAbstract(this)"><span class="arrow">›</span> Abstract</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="paper" data-tags="perovskite detector simulation" data-year="2024">
+      <div class="paper-num">13</div>
+      <div class="paper-body">
+        <div class="paper-tags">
+          <span class="tag tag-perovskite">Perovskites</span>
+          <span class="tag tag-detector">Detectors</span>
+          <span class="tag tag-simulation">Simulation</span>
+        </div>
+        <p class="paper-title">Growth and characterization of highly efficient Cs₃Cu₂I₅ single crystal for γ-ray detection</p>
+        <div class="paper-meta">
+          <span class="journal">Nucl. Instrum. Methods Phys. Res. A</span>
+          <span class="paper-year">2024</span>
+        </div>
+        <div class="paper-abstract">
+          <p>Cs₃Cu₂I₅ single crystals grown by solvent evaporation at room temperature, characterised structurally, optically, and as scintillators. Orthorhombic structure, bandgap 3.58 eV, self-trapped exciton emission. Energy resolution 5.80 ± 0.05% at 662 keV and light output 41,000 ph/MeV. First report of intrinsic photopeak efficiencies. GEANT4 simulations show twice the efficiency of NaI:Tl.</p>
+        </div>
+        <div class="paper-actions">
+          <a class="btn-paper" href="https://doi.org/10.1016/j.nima.2024.169867" target="_blank">↗ Full paper</a>
+          <button class="btn-abstract" onclick="toggleAbstract(this)"><span class="arrow">›</span> Abstract</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="paper" data-tags="radiation" data-year="2020">
+      <div class="paper-num">14</div>
+      <div class="paper-body">
+        <div class="paper-tags">
+          <span class="tag tag-radiation">Radiological</span>
+        </div>
+        <p class="paper-title">Radiological impact assessment of soil and groundwater of Himalayan regions in Uttarakhand, India</p>
+        <div class="paper-meta">
+          <span class="journal">J. Radioanal. Nucl. Chem.</span>
+          <span class="paper-year">2020</span>
+        </div>
+        <div class="paper-abstract">
+          <p>Natural radioactivity measured in soil and groundwater in the Uttarakhand Himalayas. Average specific activities of ²²⁶Ra (116 Bq/kg), ²³²Th (137 Bq/kg), and ⁴⁰K (735 Bq/kg) exceed global averages. Radon (35 Bq/l) and uranium (1.3 µg/l) in potable groundwater remain within WHO safe limits. Risk assessment parameters and dose quantities are reported.</p>
+        </div>
+        <div class="paper-actions">
+          <a class="btn-paper" href="https://doi.org/10.1007/s10967-019-06827-9" target="_blank">↗ Full paper</a>
+          <button class="btn-abstract" onclick="toggleAbstract(this)"><span class="arrow">›</span> Abstract</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="paper" data-tags="detector" data-year="2021">
+      <div class="paper-num">15</div>
+      <div class="paper-body">
+        <div class="paper-tags">
+          <span class="tag tag-detector">Detectors</span>
+        </div>
+        <p class="paper-title">Energy resolution of Compton electrons in LaCl₃:Ce using compact digitizer</p>
+        <div class="paper-meta">
+          <span class="journal">J. Radioanal. Nucl. Chem.</span>
+          <span class="paper-year">2021</span>
+        </div>
+        <div class="paper-abstract">
+          <p>Intrinsic energy resolution of Compton electrons in a 1″×1″ LaCl₃:Ce scintillator measured with a PIXIE-4 digital DAQ using Wide Angle Compton Coincidence Technique (WACCT). Energy range 100 keV–1 MeV with ¹³⁷Cs, ⁶⁰Co, and ²²Na sources. Effect of coincidence energy gating window studied. Good agreement with analogue method results in the literature.</p>
+        </div>
+        <div class="paper-actions">
+          <a class="btn-paper" href="https://doi.org/10.1007/s10967-021-07942-2" target="_blank">↗ Full paper</a>
+          <button class="btn-abstract" onclick="toggleAbstract(this)"><span class="arrow">›</span> Abstract</button>
+        </div>
+      </div>
+    </article>
+
+  </section><!-- /papers-list -->
+
+  <footer>
+    <span>© Virender Ranga</span>
+    <span id="footer-count">15 publications listed</span>
+  </footer>
+
+</div><!-- /container -->
+
+<script>
+  /* ── ABSTRACT TOGGLE ─────────────────────────────── */
+  function toggleAbstract(btn) {
+    const abstract = btn.closest('.paper-body').querySelector('.paper-abstract');
+    const isOpen = abstract.classList.toggle('open');
+    btn.classList.toggle('open', isOpen);
+    btn.querySelector('.arrow').style.transform = isOpen ? 'rotate(90deg)' : '';
+    btn.childNodes[1].textContent = isOpen ? ' Abstract' : ' Abstract';
+  }
+
+  /* ── FILTER ──────────────────────────────────────── */
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filter = btn.dataset.filter;
+      let visible = 0;
+      document.querySelectorAll('.paper').forEach(paper => {
+        const tags = paper.dataset.tags.split(' ');
+        const show = filter === 'all' || tags.includes(filter);
+        paper.classList.toggle('hidden', !show);
+        if (show) visible++;
+      });
+      document.getElementById('footer-count').textContent =
+        filter === 'all'
+          ? `${visible} publications listed`
+          : `${visible} publication${visible !== 1 ? 's' : ''} in this area`;
+    });
+  });
+</script>
+
+</body>
+</html>
