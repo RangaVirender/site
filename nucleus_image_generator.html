@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nucleus Image Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Left panel ── */
+    #panel {
+      width: 272px;
+      flex-shrink: 0;
+      background: #161b22;
+      border-right: 1px solid #30363d;
+      padding: 22px 18px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    #panel h1 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8b949e;
+      margin-bottom: 20px;
+    }
+
+    .group { margin-bottom: 14px; }
+
+    .glabel { font-size: 0.8rem; font-weight: 700; margin-bottom: 5px; }
+    .glabel.p { color: #e05c50; }
+    .glabel.n { color: #4a8fd4; }
+
+    .row { display: flex; align-items: center; gap: 8px; }
+
+    input[type=number] {
+      width: 60px; padding: 4px 6px;
+      background: #0d1117; border: 1px solid #30363d;
+      border-radius: 6px; color: #e6edf3;
+      font-size: 0.85rem; text-align: center;
+    }
+    input[type=number]:focus { outline: none; border-color: #58a6ff; }
+
+    input[type=range] { flex: 1; cursor: pointer; }
+    input[type=range].p { accent-color: #e05c50; }
+    input[type=range].n { accent-color: #4a8fd4; }
+
+    .div { border-top: 1px solid #30363d; margin: 14px 0; }
+
+    #info { text-align: center; line-height: 1.7; min-height: 3.5em; }
+    #info .big { font-size: 1.55rem; font-weight: 700; color: #fff; }
+    #info .sub { font-size: 0.8rem; color: #8b949e; }
+
+    .legend {
+      display: flex; justify-content: center;
+      gap: 16px; margin: 10px 0;
+      font-size: 0.8rem; font-weight: 700;
+    }
+    .lp { color: #e05c50; }
+    .ln { color: #4a8fd4; }
+
+    .chk { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .chk input { cursor: pointer; accent-color: #58a6ff; }
+    .chk label { color: #8b949e; font-size: 0.78rem; cursor: pointer; }
+
+    #saveBtn {
+      width: 100%; padding: 9px;
+      background: #238636; color: #fff;
+      border: none; border-radius: 7px;
+      font-size: 0.88rem; font-weight: 700;
+      cursor: pointer; transition: background 0.12s;
+    }
+    #saveBtn:hover { background: #2ea043; }
+    #saveBtn:disabled { background: #444; cursor: default; }
+
+    #status {
+      color: #8b949e; font-size: 0.74rem;
+      text-align: center; margin-top: 7px; min-height: 1em;
+    }
+
+    /* ── Canvas area ── */
+    #right {
+      flex: 1; display: flex;
+      align-items: center; justify-content: center;
+      background: #090d14;
+    }
+
+    #cnv {
+      display: block;
+      box-shadow: 0 0 0 1px #30363d, 0 12px 40px rgba(0,0,0,.5);
+    }
+
+    /* Mobile stack */
+    @media (max-width: 700px) {
+      body { flex-direction: column; height: auto; overflow: auto; }
+      #panel { width: 100%; border-right: none; border-bottom: 1px solid #30363d; }
+      #right { padding: 16px; }
+      #cnv { width: 100% !important; height: auto !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Nucleus Generator</h1>
+
+  <div class="group">
+    <div class="glabel p">Protons (Z)</div>
+    <div class="row">
+      <input type="number" id="zNum"    min="0" max="118" value="6">
+      <input type="range"  id="zSlider" min="0" max="118" value="6" class="p">
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="glabel n">Neutrons (N)</div>
+    <div class="row">
+      <input type="number" id="nNum"    min="0" max="177" value="6">
+      <input type="range"  id="nSlider" min="0" max="177" value="6" class="n">
+    </div>
+  </div>
+
+  <div class="div"></div>
+
+  <div id="info">
+    <div class="big">C-12</div>
+    <div class="sub">Carbon &nbsp;·&nbsp; Z=6, N=6, A=12</div>
+  </div>
+
+  <div class="legend">
+    <span class="lp">● Proton</span>
+    <span class="ln">● Neutron</span>
+  </div>
+
+  <div class="div"></div>
+
+  <div class="chk">
+    <input type="checkbox" id="transp">
+    <label for="transp">Transparent background (for PPT)</label>
+  </div>
+
+  <button id="saveBtn">&#x1F4BE; Save PNG (1400 × 1400)</button>
+  <div id="status"></div>
+</div>
+
+<div id="right">
+  <canvas id="cnv" width="540" height="540"></canvas>
+</div>
+
+<script>
+'use strict';
+
+// ── Element table ─────────────────────────────────────────────────────────────
+const ELEMENTS = {
+   0:["n","Neutron"],      1:["H","Hydrogen"],    2:["He","Helium"],
+   3:["Li","Lithium"],     4:["Be","Beryllium"],  5:["B","Boron"],
+   6:["C","Carbon"],       7:["N","Nitrogen"],    8:["O","Oxygen"],
+   9:["F","Fluorine"],    10:["Ne","Neon"],       11:["Na","Sodium"],
+  12:["Mg","Magnesium"],  13:["Al","Aluminium"], 14:["Si","Silicon"],
+  15:["P","Phosphorus"],  16:["S","Sulfur"],     17:["Cl","Chlorine"],
+  18:["Ar","Argon"],      19:["K","Potassium"],  20:["Ca","Calcium"],
+  21:["Sc","Scandium"],   22:["Ti","Titanium"],  23:["V","Vanadium"],
+  24:["Cr","Chromium"],   25:["Mn","Manganese"], 26:["Fe","Iron"],
+  27:["Co","Cobalt"],     28:["Ni","Nickel"],    29:["Cu","Copper"],
+  30:["Zn","Zinc"],       35:["Br","Bromine"],   36:["Kr","Krypton"],
+  47:["Ag","Silver"],     50:["Sn","Tin"],       53:["I","Iodine"],
+  54:["Xe","Xenon"],      56:["Ba","Barium"],    79:["Au","Gold"],
+  80:["Hg","Mercury"],    82:["Pb","Lead"],      86:["Rn","Radon"],
+  92:["U","Uranium"],     94:["Pu","Plutonium"],
+};
+
+// ── Render constants ──────────────────────────────────────────────────────────
+const P_COL  = [0.89, 0.36, 0.28];   // coral red
+const N_COL  = [0.25, 0.55, 0.88];   // sky blue
+const NUC_R  = 1.0;
+const KA=0.25, KD=0.62, KS=0.65, NS=45;
+const HIRES  = 1400;
+
+function v3norm([x,y,z]) { const m=Math.hypot(x,y,z); return [x/m,y/m,z/m]; }
+const _L = v3norm([0.45, 0.60, 0.85]);
+const _H = v3norm([_L[0], _L[1], _L[2]+1]);   // half-vector with V=[0,0,1]
+
+// ── Seeded PRNG (Mulberry32) ──────────────────────────────────────────────────
+function rng32(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ── Nucleon packing (FCC, closest-A sites) ────────────────────────────────────
+function packNucleons(A) {
+  if (A === 0) return [];
+  const rng   = rng32(42);
+  const d     = NUC_R * 1.96;
+  const nr    = d * Math.cbrt(3 * A / (16 * Math.PI)) + d * 2;
+  const steps = Math.ceil(nr / d) + 1;
+  const shifts = [[0,0,0],[d/2,d/2,0],[d/2,0,d/2],[0,d/2,d/2]];
+
+  const xs=[], ys=[], zs=[], ds=[];
+  for (const [sx,sy,sz] of shifts)
+    for (let ix=-steps; ix<=steps; ix++)
+    for (let iy=-steps; iy<=steps; iy++)
+    for (let iz=-steps; iz<=steps; iz++) {
+      const x=ix*d+sx, y=iy*d+sy, z=iz*d+sz;
+      xs.push(x); ys.push(y); zs.push(z);
+      ds.push(Math.hypot(x,y,z) + rng()*0.06*d);  // tiny noise breaks ties
+    }
+
+  const idx = Array.from({length:xs.length},(_,i)=>i).sort((a,b)=>ds[a]-ds[b]);
+
+  const pos = [];
+  for (let i=0; i<A; i++) {
+    const k = idx[i];
+    pos.push([
+      xs[k] + (rng()*2-1)*d*0.12,
+      ys[k] + (rng()*2-1)*d*0.12,
+      zs[k] + (rng()*2-1)*d*0.12,
+    ]);
+  }
+  return pos;
+}
+
+function makeLabels(Z, N) {
+  const rng = rng32(99);
+  const lbl = new Array(Z).fill(1).concat(new Array(N).fill(0));
+  for (let i=lbl.length-1; i>0; i--) {
+    const j = Math.floor(rng()*(i+1));
+    [lbl[i],lbl[j]] = [lbl[j],lbl[i]];
+  }
+  return lbl;
+}
+
+// ── Ray tracer (orthographic, bounding-box optimised) ─────────────────────────
+function renderTo(canvas, pos, lbl, transparent) {
+  const W=canvas.width, H=canvas.height;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(W, H);
+  const buf = img.data;               // Uint8ClampedArray RGBA
+
+  if (transparent) {
+    buf.fill(0);                      // fully transparent
+  } else {
+    buf.fill(255);                    // white background
+  }
+
+  if (pos.length === 0) { ctx.putImageData(img,0,0); return; }
+
+  const r = NUC_R;
+  let maxAbs = 0;
+  for (const [x,y,z] of pos) maxAbs = Math.max(maxAbs,Math.abs(x),Math.abs(y),Math.abs(z));
+  const ext = maxAbs + r + 0.8;
+  const sc  = W / (2*ext);           // pixels per world unit
+
+  const depth = new Float32Array(W*H).fill(-Infinity);
+
+  // Draw back-to-front
+  const order = Array.from({length:pos.length},(_,i)=>i).sort((a,b)=>pos[a][2]-pos[b][2]);
+
+  for (const i of order) {
+    const [cx,cy,cz] = pos[i];
+    const col = lbl[i]===1 ? P_COL : N_COL;
+
+    // Sphere bounding box in pixel space
+    const pcx = (cx+ext)/(2*ext)*W - 0.5;
+    const pcy = (ext-cy)/(2*ext)*H - 0.5;
+    const pr  = r * sc;
+
+    const x0=Math.max(0,   Math.floor(pcx-pr));
+    const x1=Math.min(W-1, Math.ceil (pcx+pr));
+    const y0=Math.max(0,   Math.floor(pcy-pr));
+    const y1=Math.min(H-1, Math.ceil (pcy+pr));
+
+    for (let py=y0; py<=y1; py++) {
+      const wy = ext - (py+0.5)*(2*ext/H);
+      const dy = wy-cy, dy2=dy*dy;
+
+      for (let px=x0; px<=x1; px++) {
+        const wx = -ext + (px+0.5)*(2*ext/W);
+        const dx = wx-cx;
+        const d2 = dx*dx + dy2;
+        if (d2 >= r*r) continue;
+
+        const dz   = Math.sqrt(r*r - d2);
+        const zHit = cz + dz;
+        const pi   = py*W + px;
+        if (zHit <= depth[pi]) continue;
+        depth[pi] = zHit;
+
+        const nx=dx/r, ny=dy/r, nz=dz/r;
+
+        const diff = Math.max(0, nx*_L[0]+ny*_L[1]+nz*_L[2]);
+        const hd   = Math.max(0, nx*_H[0]+ny*_H[1]+nz*_H[2]);
+        const spec = Math.pow(hd, NS);
+        const rim  = Math.max(0.30, Math.min(1.0, nz*0.75+0.30));
+
+        const p4 = pi*4;
+        for (let c=0; c<3; c++) {
+          buf[p4+c] = Math.round(Math.min(1, Math.max(0,
+            (KA*col[c] + KD*diff*col[c] + KS*spec) * rim
+          )) * 255);
+        }
+        buf[p4+3] = 255;
+      }
+    }
+  }
+  ctx.putImageData(img,0,0);
+}
+
+// ── App state ─────────────────────────────────────────────────────────────────
+let curPos=[], curLbl=[], curZ=6, curN=6;
+let renderTimer=null;
+
+function clampInt(v,lo,hi){ return Math.max(lo,Math.min(hi,isNaN(v)?lo:Math.round(v))); }
+
+function scheduleRender() {
+  clearTimeout(renderTimer);
+  renderTimer = setTimeout(doRender, 60);
+}
+
+function doRender() {
+  curZ = clampInt(+zNum.value, 0, 118);
+  curN = clampInt(+nNum.value, 0, 177);
+  const A = curZ+curN;
+
+  // Update info panel
+  const infoEl = document.getElementById('info');
+  if (A === 0) {
+    infoEl.innerHTML = '<div class="sub">(select protons / neutrons)</div>';
+  } else if (curZ === 0) {
+    infoEl.innerHTML = `<div class="big">n×${A}</div><div class="sub">Free neutrons · N=${A}</div>`;
+  } else {
+    const [sym,name] = ELEMENTS[curZ] ?? [`E${curZ}`,`Element ${curZ}`];
+    infoEl.innerHTML = `<div class="big">${sym}-${A}</div><div class="sub">${name} · Z=${curZ}, N=${curN}, A=${A}</div>`;
+  }
+
+  curPos = packNucleons(A);
+  curLbl = makeLabels(curZ, curN);
+  renderTo(cnv, curPos, curLbl, false);
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+const zNum=document.getElementById('zNum'), zSlider=document.getElementById('zSlider');
+const nNum=document.getElementById('nNum'), nSlider=document.getElementById('nSlider');
+const cnv =document.getElementById('cnv');
+
+function syncZ(v) { v=clampInt(v,0,118); zNum.value=zSlider.value=v; scheduleRender(); }
+function syncN(v) { v=clampInt(v,0,177); nNum.value=nSlider.value=v; scheduleRender(); }
+
+zNum.addEventListener('input',    ()=>syncZ(+zNum.value));
+zSlider.addEventListener('input', ()=>syncZ(+zSlider.value));
+nNum.addEventListener('input',    ()=>syncN(+nNum.value));
+nSlider.addEventListener('input', ()=>syncN(+nSlider.value));
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+document.getElementById('saveBtn').addEventListener('click', async ()=>{
+  const btn=document.getElementById('saveBtn');
+  const st =document.getElementById('status');
+  const tr =document.getElementById('transp').checked;
+  btn.disabled=true; st.textContent='Rendering…';
+  await new Promise(r=>setTimeout(r,20));
+
+  const off=document.createElement('canvas');
+  off.width=off.height=HIRES;
+  renderTo(off, curPos, curLbl, tr);
+
+  const [sym] = ELEMENTS[curZ] ?? [`E${curZ}`];
+  const fname = `nucleus_${sym}${curZ+curN}.png`;
+
+  off.toBlob(blob=>{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=fname; a.click();
+    URL.revokeObjectURL(a.href);
+    st.textContent=`Saved ${fname}`;
+    setTimeout(()=>st.textContent='',3000);
+    btn.disabled=false;
+  });
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+doRender();
+</script>
+</body>
+</html>
