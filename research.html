@@ -146,7 +146,18 @@
     font-weight: 500;
   }
 
-  /* ── PAPER CARD ─────────────────────────────────────────── */
+  .filter-sep {
+    width: 1px;
+    background: var(--border);
+    align-self: stretch;
+    margin: 0 4px;
+  }
+  .filter-btn--first {
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+  .filter-btn--first:hover { border-color: var(--accent2); color: var(--accent2); background: rgba(108,71,217,0.07); }
+  .filter-btn--first.active { background: var(--accent2); border-color: var(--accent2); color: #fff; }
   .papers { padding: 32px 0 80px; display: flex; flex-direction: column; gap: 0; }
   .paper {
     display: grid;
@@ -323,24 +334,27 @@
     <button class="filter-btn" data-filter="perovskite">Perovskites</button>
     <button class="filter-btn" data-filter="radiation">Radiological</button>
     <button class="filter-btn" data-filter="pet">TOF-PET</button>
+    <span class="filter-sep"></span>
+    <button class="filter-btn filter-btn--first" data-filter="first-author">First author only</button>
   </div>
 
   <!-- ── PAPERS ────────────────────────────────────────────── -->
   <!--
     HOW TO ADD A NEW PAPER:
     Copy one <article class="paper"> block below and fill in:
-      data-tags   : space-separated tags from: detector nuclear perovskite radiation pet simulation
-      data-year   : publication year
-      .paper-title: full paper title
-      .journal    : journal name
-      .paper-year : year again (displayed)
+      data-tags         : space-separated tags from: detector nuclear perovskite radiation pet simulation
+      data-year         : publication year
+      data-first-author : "true" if you are the first author, "false" otherwise
+      .paper-title      : full paper title
+      .journal          : journal name
+      .paper-year       : year again (displayed)
       .paper-abstract > p: your abstract text
       href in .btn-paper: the DOI link
   -->
 
   <section class="papers" id="papers-list">
 
-    <article class="paper" data-tags="nuclear simulation" data-year="2024">
+    <article class="paper" data-tags="nuclear simulation" data-year="2024" data-first-author="true">
       <div class="paper-num">01</div>
       <div class="paper-body">
         <div class="paper-tags">
@@ -362,7 +376,7 @@
       </div>
     </article>
 
-    <article class="paper" data-tags="detector simulation" data-year="2024">
+    <article class="paper" data-tags="detector simulation" data-year="2024" data-first-author="true">
       <div class="paper-num">02</div>
       <div class="paper-body">
         <div class="paper-tags">
@@ -384,7 +398,7 @@
       </div>
     </article>
 
-    <article class="paper" data-tags="detector simulation" data-year="2022">
+    <article class="paper" data-tags="detector simulation" data-year="2022" data-first-author="true">
       <div class="paper-num">03</div>
       <div class="paper-body">
         <div class="paper-tags">
@@ -406,7 +420,7 @@
       </div>
     </article>
 
-    <article class="paper" data-tags="detector" data-year="2017">
+    <article class="paper" data-tags="detector" data-year="2017" data-first-author="true">
       <div class="paper-num">04</div>
       <div class="paper-body">
         <div class="paper-tags">
@@ -693,14 +707,22 @@
       const filter = btn.dataset.filter;
       let visible = 0;
       document.querySelectorAll('.paper').forEach(paper => {
-        const tags = paper.dataset.tags.split(' ');
-        const show = filter === 'all' || tags.includes(filter);
+        let show;
+        if (filter === 'all') {
+          show = true;
+        } else if (filter === 'first-author') {
+          show = paper.dataset.firstAuthor === 'true';
+        } else {
+          show = paper.dataset.tags.split(' ').includes(filter);
+        }
         paper.classList.toggle('hidden', !show);
         if (show) visible++;
       });
       document.getElementById('footer-count').textContent =
         filter === 'all'
           ? `${visible} publications listed`
+          : filter === 'first-author'
+          ? `${visible} first-author publication${visible !== 1 ? 's' : ''}`
           : `${visible} publication${visible !== 1 ? 's' : ''} in this area`;
     });
   });
