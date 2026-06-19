@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nuclear Cross-Section — 3D Animation</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    #canvas-container {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* ── Overlay UI ── */
+    #ui {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      width: 280px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .panel {
+      background: rgba(22, 27, 34, 0.88);
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 14px 16px;
+      backdrop-filter: blur(8px);
+    }
+
+    .panel h2 {
+      font-size: 15px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #58a6ff, #3fb950);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+    }
+    .panel .sub {
+      font-size: 11px;
+      color: #6e7681;
+      margin-bottom: 12px;
+    }
+
+    .ctrl-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .ctrl-row label {
+      font-size: 12px;
+      color: #8b949e;
+    }
+    .ctrl-row .val {
+      font-size: 13px;
+      font-weight: 700;
+      color: #79c0ff;
+      font-family: monospace;
+      min-width: 56px;
+      text-align: right;
+    }
+    input[type=range] {
+      width: 100%;
+      accent-color: #58a6ff;
+      margin-top: 4px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .btn {
+      flex: 1;
+      padding: 8px 0;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: #1f6feb; color: #fff; }
+    .btn-secondary { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
+
+    /* ── Legend ── */
+    #legend {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      z-index: 10;
+      background: rgba(22,27,34,.88);
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 12px 16px;
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .leg-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #8b949e;
+    }
+    .leg-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Info box (top-right) ── */
+    #info {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 240px;
+      z-index: 10;
+      background: rgba(22,27,34,.88);
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 14px 16px;
+      backdrop-filter: blur(8px);
+      font-size: 12px;
+      line-height: 1.7;
+      color: #8b949e;
+    }
+    #info h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #e6edf3;
+      margin-bottom: 8px;
+    }
+    #info .eq {
+      font-family: monospace;
+      color: #79c0ff;
+      font-size: 13px;
+    }
+    #info .highlight { color: #56d364; }
+
+    /* ── Counters ── */
+    #counters {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      z-index: 10;
+      background: rgba(22,27,34,.88);
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 12px 16px;
+      backdrop-filter: blur(8px);
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 160px;
+    }
+    #counters .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #counters .label { color: #8b949e; }
+    #counters .num { font-family: monospace; font-weight: 700; }
+    .num-in  { color: #58a6ff; }
+    .num-sc  { color: #f78166; }
+    .num-pa  { color: #56d364; }
+    .num-rt  { color: #ffa657; }
+
+    /* VR tag */
+    .vr-tag {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      color: #21262d;
+      pointer-events: none;
+      z-index: 1;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<!-- Controls -->
+<div id="ui">
+  <div class="panel">
+    <h2>Cross-Section Animation</h2>
+    <div class="sub">Drag to orbit &nbsp;·&nbsp; Scroll to zoom</div>
+
+    <div class="ctrl-row">
+      <label>Cross-section &sigma; (arb.)</label>
+      <span class="val" id="sigmaVal">3.0</span>
+    </div>
+    <input type="range" id="sigmaSlider" min="0.5" max="6" step="0.1" value="3.0" />
+
+    <div class="ctrl-row" style="margin-top:10px">
+      <label>Beam intensity</label>
+      <span class="val" id="rateVal">20 /s</span>
+    </div>
+    <input type="range" id="rateSlider" min="4" max="40" step="2" value="20" />
+
+    <div class="ctrl-row" style="margin-top:10px">
+      <label>Beam spread (width)</label>
+      <span class="val" id="spreadVal">5.0</span>
+    </div>
+    <input type="range" id="spreadSlider" min="1" max="8" step="0.5" value="5.0" />
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="playBtn">Pause</button>
+      <button class="btn btn-secondary" id="resetBtn">Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- Legend -->
+<div id="legend">
+  <div class="leg-item"><div class="leg-dot" style="background:#58a6ff"></div> Incident particles</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#f78166"></div> Scattered particles</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#56d364"></div> Transmitted (passed through)</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#ffd700; opacity:.7; border-radius:0; width:24px; height:4px;"></div> Cross-section disk</div>
+</div>
+
+<!-- Info -->
+<div id="info">
+  <h3>What is Cross-Section?</h3>
+  The <span class="highlight">cross-section &sigma;</span> is the effective target area a nucleus presents to an incident beam.<br><br>
+  Particles with <span class="eq">b &lt; &radic;(&sigma;/&pi;)</span> are scattered; others pass through.<br><br>
+  <span class="highlight">Larger &sigma;</span> &rarr; more scattering.<br>
+  <span class="highlight">Smaller &sigma;</span> &rarr; fewer interactions.
+</div>
+
+<!-- Counters -->
+<div id="counters">
+  <div class="row"><span class="label">Incident</span> <span class="num num-in" id="cntIn">0</span></div>
+  <div class="row"><span class="label">Scattered</span> <span class="num num-sc" id="cntSc">0</span></div>
+  <div class="row"><span class="label">Passed through</span> <span class="num num-pa" id="cntPa">0</span></div>
+  <div class="row"><span class="label">Scatter rate</span> <span class="num num-rt" id="cntRt">0%</span></div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ── Scene setup ──────────────────────────────────────────────────────────────
+const container = document.getElementById('canvas-container');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+container.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d1117);
+scene.fog = new THREE.Fog(0x0d1117, 40, 90);
+
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(14, 10, 20);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.07;
+controls.target.set(0, 0, 0);
+
+// ── Lighting ─────────────────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0x1a2030, 3));
+const dir = new THREE.DirectionalLight(0xffffff, 2.5);
+dir.position.set(10, 20, 10);
+dir.castShadow = true;
+scene.add(dir);
+const pt1 = new THREE.PointLight(0x58a6ff, 3, 30);
+pt1.position.set(-10, 5, 0);
+scene.add(pt1);
+const pt2 = new THREE.PointLight(0x3fb950, 2, 25);
+pt2.position.set(8, -4, 0);
+scene.add(pt2);
+
+// ── Grid ─────────────────────────────────────────────────────────────────────
+const grid = new THREE.GridHelper(60, 30, 0x21262d, 0x161b22);
+grid.position.y = -5;
+scene.add(grid);
+
+// ── Target nucleus ────────────────────────────────────────────────────────────
+const nucleusGeo = new THREE.SphereGeometry(1.4, 48, 48);
+const nucleusMat = new THREE.MeshPhongMaterial({
+  color: 0xffa000,
+  emissive: 0x3a1a00,
+  shininess: 120,
+  transparent: true,
+  opacity: 0.92,
+});
+const nucleus = new THREE.Mesh(nucleusGeo, nucleusMat);
+nucleus.castShadow = true;
+scene.add(nucleus);
+
+// Nucleus glow ring
+const glowGeo = new THREE.SphereGeometry(1.6, 32, 32);
+const glowMat = new THREE.MeshBasicMaterial({
+  color: 0xff8c00, transparent: true, opacity: 0.08, side: THREE.BackSide,
+});
+scene.add(new THREE.Mesh(glowGeo, glowMat));
+
+// ── Cross-section disk ────────────────────────────────────────────────────────
+const diskGeo = new THREE.CircleGeometry(1, 64);
+const diskMat = new THREE.MeshBasicMaterial({
+  color: 0xffd700, transparent: true, opacity: 0.18, side: THREE.DoubleSide,
+});
+const disk = new THREE.Mesh(diskGeo, diskMat);
+disk.rotation.y = Math.PI / 2;  // face the beam (beam comes from -x)
+scene.add(disk);
+
+// Disk ring (outline)
+const ringGeo = new THREE.RingGeometry(0.98, 1.06, 64);
+const ringMat = new THREE.MeshBasicMaterial({
+  color: 0xffd700, transparent: true, opacity: 0.7, side: THREE.DoubleSide,
+});
+const ring = new THREE.Mesh(ringGeo, ringMat);
+ring.rotation.y = Math.PI / 2;
+scene.add(ring);
+
+// ── Beam axis arrow ───────────────────────────────────────────────────────────
+const axisPoints = [new THREE.Vector3(-20, 0, 0), new THREE.Vector3(-2, 0, 0)];
+const axisMat = new THREE.LineBasicMaterial({ color: 0x30363d, transparent: true, opacity: 0.5 });
+scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(axisPoints), axisMat));
+
+// ── Beam label text (canvas texture) ─────────────────────────────────────────
+function makeTextSprite(text, color = '#8b949e') {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512; canvas.height = 80;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = color;
+  ctx.font = 'bold 36px Segoe UI, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 256, 40);
+  const tex = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.85 });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(5, 0.75, 1);
+  return sprite;
+}
+const beamLabel = makeTextSprite('Incident Beam →', '#58a6ff');
+beamLabel.position.set(-13, 1.5, 0);
+scene.add(beamLabel);
+
+const targetLabel = makeTextSprite('Target Nucleus', '#ffa000');
+targetLabel.position.set(0, 2.8, 0);
+scene.add(targetLabel);
+
+const sigmaLabel = makeTextSprite('σ (cross-section)', '#ffd700');
+sigmaLabel.position.set(0, -2.5, 0);
+scene.add(sigmaLabel);
+
+// ── Particle pool ─────────────────────────────────────────────────────────────
+const MAX_PARTICLES = 300;
+const particles = [];
+
+const geoIn  = new THREE.SphereGeometry(0.22, 12, 12);
+const matIn  = new THREE.MeshPhongMaterial({ color: 0x58a6ff, emissive: 0x0a2040, shininess: 100 });
+const matSc  = new THREE.MeshPhongMaterial({ color: 0xf78166, emissive: 0x3a0a00, shininess: 100 });
+const matPa  = new THREE.MeshPhongMaterial({ color: 0x56d364, emissive: 0x0a2a0a, shininess: 100 });
+
+// Trail geometry pool
+const trailPool = [];
+for (let i = 0; i < MAX_PARTICLES; i++) {
+  const pts = [new THREE.Vector3(), new THREE.Vector3()];
+  const tGeo = new THREE.BufferGeometry().setFromPoints(pts);
+  const tMat = new THREE.LineBasicMaterial({ color: 0x58a6ff, transparent: true, opacity: 0.3 });
+  const trail = new THREE.Line(tGeo, tMat);
+  trail.visible = false;
+  scene.add(trail);
+  trailPool.push(trail);
+}
+
+function spawnParticle(spread, sigma) {
+  if (particles.length >= MAX_PARTICLES) return;
+
+  const halfSpread = spread / 2;
+  const y = (Math.random() - 0.5) * spread;
+  const z = (Math.random() - 0.5) * spread;
+  const startX = -18;
+
+  const mesh = new THREE.Mesh(geoIn, matIn);
+  mesh.position.set(startX, y, z);
+  scene.add(mesh);
+
+  const trailLine = trailPool.find(t => !t.visible);
+  if (trailLine) {
+    trailLine.visible = true;
+    trailLine.material.color.setHex(0x58a6ff);
+    trailLine.material.opacity = 0.35;
+  }
+
+  const b = Math.sqrt(y * y + z * z);  // impact parameter
+  const bMax = Math.sqrt(sigma / Math.PI);
+  const willScatter = b < bMax;
+  const speed = 0.14 + Math.random() * 0.04;
+
+  let scatterDir = null;
+  if (willScatter) {
+    const theta = Math.acos(1 - 2 * Math.random()) * 0.6 + 0.2;
+    const phi   = Math.random() * Math.PI * 2;
+    scatterDir = new THREE.Vector3(
+      Math.cos(theta),
+      Math.sin(theta) * Math.cos(phi),
+      Math.sin(theta) * Math.sin(phi)
+    ).normalize();
+  }
+
+  particles.push({
+    mesh, trailLine, y, z, b, willScatter, scatterDir,
+    speed, startX,
+    phase: 'incoming',   // 'incoming' | 'scattered' | 'passed' | 'dead'
+    age: 0,
+    prevPos: new THREE.Vector3(startX, y, z),
+    scattered: false,
+    counted: false,
+  });
+}
+
+// ── Counters ──────────────────────────────────────────────────────────────────
+let cntIn = 0, cntSc = 0, cntPa = 0;
+
+function updateCounters() {
+  document.getElementById('cntIn').textContent = cntIn;
+  document.getElementById('cntSc').textContent = cntSc;
+  document.getElementById('cntPa').textContent = cntPa;
+  const rt = cntIn > 0 ? ((cntSc / cntIn) * 100).toFixed(1) : '0.0';
+  document.getElementById('cntRt').textContent = rt + '%';
+}
+
+// ── Parameters ────────────────────────────────────────────────────────────────
+let sigma  = 3.0;
+let rate   = 20;
+let spread = 5.0;
+let paused = false;
+let spawnAccum = 0;
+
+// ── Sliders ───────────────────────────────────────────────────────────────────
+const sigmaSlider  = document.getElementById('sigmaSlider');
+const rateSlider   = document.getElementById('rateSlider');
+const spreadSlider = document.getElementById('spreadSlider');
+
+sigmaSlider.addEventListener('input', () => {
+  sigma = parseFloat(sigmaSlider.value);
+  document.getElementById('sigmaVal').textContent = sigma.toFixed(1);
+  updateDisk();
+});
+rateSlider.addEventListener('input', () => {
+  rate = parseInt(rateSlider.value);
+  document.getElementById('rateVal').textContent = rate + ' /s';
+});
+spreadSlider.addEventListener('input', () => {
+  spread = parseFloat(spreadSlider.value);
+  document.getElementById('spreadVal').textContent = spread.toFixed(1);
+});
+
+document.getElementById('playBtn').addEventListener('click', () => {
+  paused = !paused;
+  document.getElementById('playBtn').textContent = paused ? 'Play' : 'Pause';
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  particles.forEach(p => {
+    scene.remove(p.mesh);
+    if (p.trailLine) p.trailLine.visible = false;
+  });
+  particles.length = 0;
+  cntIn = cntSc = cntPa = 0;
+  updateCounters();
+});
+
+function updateDisk() {
+  const r = Math.sqrt(sigma / Math.PI);
+  disk.scale.setScalar(r);
+  ring.scale.setScalar(r);
+}
+updateDisk();
+
+// ── Animate ───────────────────────────────────────────────────────────────────
+let last = performance.now();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const now = performance.now();
+  const dt  = Math.min((now - last) / 1000, 0.05);
+  last = now;
+
+  controls.update();
+
+  if (!paused) {
+    // Spawn particles
+    spawnAccum += rate * dt;
+    while (spawnAccum >= 1) {
+      spawnParticle(spread, sigma);
+      spawnAccum -= 1;
+      cntIn++;
+      updateCounters();
+    }
+
+    // Update particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.age += dt;
+      p.prevPos.copy(p.mesh.position);
+
+      if (p.phase === 'incoming') {
+        p.mesh.position.x += p.speed * 60 * dt;
+
+        // Check if reached nucleus region
+        const dist = p.mesh.position.length();
+        if (p.mesh.position.x >= -p.b * 0.3 && !p.scattered) {
+          p.scattered = true;
+          if (p.willScatter) {
+            p.phase = 'scattered';
+            p.mesh.material = matSc.clone();
+            if (p.trailLine) p.trailLine.material.color.setHex(0xf78166);
+            cntSc++;
+            updateCounters();
+          } else {
+            p.phase = 'passed';
+            p.mesh.material = matPa.clone();
+            if (p.trailLine) p.trailLine.material.color.setHex(0x56d364);
+            cntPa++;
+            updateCounters();
+          }
+        }
+      } else if (p.phase === 'scattered') {
+        p.mesh.position.addScaledVector(p.scatterDir, p.speed * 55 * dt);
+      } else if (p.phase === 'passed') {
+        p.mesh.position.x += p.speed * 60 * dt;
+      }
+
+      // Update trail
+      if (p.trailLine) {
+        const positions = p.trailLine.geometry.attributes.position;
+        if (positions) {
+          const prev = p.prevPos;
+          const cur  = p.mesh.position;
+          positions.setXYZ(0, prev.x, prev.y, prev.z);
+          positions.setXYZ(1, cur.x,  cur.y,  cur.z);
+          positions.needsUpdate = true;
+        }
+      }
+
+      // Remove when out of range
+      const pos = p.mesh.position;
+      if (pos.x > 25 || pos.length() > 35 || p.age > 8) {
+        scene.remove(p.mesh);
+        if (p.trailLine) p.trailLine.visible = false;
+        particles.splice(i, 1);
+      }
+    }
+
+    // Pulse nucleus
+    const pulse = 1 + 0.03 * Math.sin(now * 0.003);
+    nucleus.scale.setScalar(pulse);
+  }
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// ── Resize ────────────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+</body>
+</html>
