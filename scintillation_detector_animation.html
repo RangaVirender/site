@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cs-137 Gamma Ray Emission</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
+  canvas { display: block; }
+  #ui { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; }
+
+  #panel {
+    position: absolute; top: 20px; left: 20px;
+    background: rgba(0,0,0,0.82); border: 1px solid rgba(0,220,160,0.3);
+    border-radius: 6px; padding: 16px 20px; color: #aaa; font-size: 12px;
+    max-width: 228px; pointer-events: all;
+  }
+  #panel h1 { font-size: 15px; color: #00dca0; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 3px; }
+  #panel .subtitle { color: #456; font-size: 11px; margin-bottom: 12px; }
+  .stat { display: flex; justify-content: space-between; margin: 4px 0; }
+  .stat .label { color: #567; }
+  .stat .val { color: #00dca0; font-weight: 600; }
+  .divider { border: none; border-top: 1px solid rgba(0,220,160,0.12); margin: 9px 0; }
+  .sec-head { font-size: 10px; color: #456; letter-spacing: 0.08em; text-transform: uppercase; margin: 8px 0 4px; }
+  .legend-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 11px; color: #789; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+  #controls {
+    position: absolute; bottom: 20px; left: 20px;
+    background: rgba(0,0,0,0.82); border: 1px solid rgba(0,220,160,0.2);
+    border-radius: 6px; padding: 12px 16px; pointer-events: all; color: #aaa; font-size: 12px;
+    min-width: 260px;
+  }
+  #controls h2 { font-size: 10px; color: #456; margin-bottom: 9px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .ctrl-row { display: flex; align-items: center; gap: 10px; margin: 7px 0; }
+  .ctrl-row label { color: #789; width: 110px; font-size: 11px; }
+  .ctrl-row input[type=range] { flex: 1; accent-color: #00dca0; }
+  .ctrl-row .val { color: #00dca0; font-size: 11px; width: 52px; text-align: right; }
+
+  #counter {
+    position: absolute; bottom: 20px; right: 20px;
+    background: rgba(0,0,0,0.82); border: 1px solid rgba(0,220,160,0.2);
+    border-radius: 6px; padding: 12px 20px; text-align: center; pointer-events: none;
+  }
+  #counter .big { font-size: 30px; font-weight: 700; color: #00dca0; }
+  #counter .lbl { font-size: 10px; color: #567; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  #hint {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.6); border: 1px solid rgba(0,220,160,0.12);
+    border-radius: 5px; padding: 6px 14px; font-size: 11px; color: #456;
+    pointer-events: none; white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+<div id="ui">
+
+  <div id="panel">
+    <h1>¹³⁷Cs Source</h1>
+    <div class="subtitle">Caesium-137 · γ emitter</div>
+    <div class="stat"><span class="label">Half-life</span><span class="val">30.17 yr</span></div>
+    <div class="stat"><span class="label">Gamma energy</span><span class="val">661.7 keV</span></div>
+    <div class="stat"><span class="label">γ yield</span><span class="val">85.1%</span></div>
+    <hr class="divider">
+    <div class="sec-head">Plastic disc (source)</div>
+    <div class="stat"><span class="label">Diameter</span><span class="val">1 inch</span></div>
+    <div class="stat"><span class="label">Thickness</span><span class="val">5 mm</span></div>
+    <hr class="divider">
+    <div class="sec-head">NaI crystal (detector)</div>
+    <div class="stat"><span class="label">Diameter</span><span class="val">2 inch</span></div>
+    <div class="stat"><span class="label">Length</span><span class="val">2 inch</span></div>
+    <div class="stat"><span class="label">Distance</span><span class="val" id="dist-val">10.0 cm</span></div>
+    <hr class="divider">
+    <div class="legend-row"><div class="dot" style="background:#00ffbb;"></div>Gamma ray (661.7 keV)</div>
+    <div class="legend-row"><div class="dot" style="background:#aad4f5; opacity:0.8;"></div>Plastic source disc</div>
+    <div class="legend-row"><div class="dot" style="background:#ffe080; opacity:0.85;"></div>NaI scintillator</div>
+    <div class="legend-row"><div class="dot" style="background:#ff1100; opacity:0.9;"></div>Scintillation flash</div>
+    <hr class="divider">
+    <div class="sec-head">PMT internals</div>
+    <div class="legend-row"><div class="dot" style="background:#44aaff;"></div>Photocathode</div>
+    <div class="legend-row"><div class="dot" style="background:#ccaa44;"></div>Dynodes (×6)</div>
+    <div class="legend-row"><div class="dot" style="background:#88ccff;"></div>Electrons (cascade)</div>
+    <div class="legend-row"><div class="dot" style="background:#ffee88;"></div>Anode output pulse</div>
+  </div>
+
+  <div id="controls">
+    <h2>Controls</h2>
+    <div class="ctrl-row">
+      <label>Emission rate</label>
+      <input type="range" id="rateSlider" min="1" max="20" value="8">
+      <span class="val" id="rateVal">8/s</span>
+    </div>
+    <div class="ctrl-row">
+      <label>Ray speed</label>
+      <input type="range" id="speedSlider" min="1" max="10" value="4">
+      <span class="val" id="speedVal">4×</span>
+    </div>
+    <div class="ctrl-row">
+      <label>Detector distance</label>
+      <input type="range" id="distSlider" min="2" max="50" value="10" step="0.5">
+      <span class="val" id="distSliderVal">10.0 cm</span>
+    </div>
+  </div>
+
+  <div id="counter">
+    <div class="big" id="total-count">0</div>
+    <div class="lbl">γ detected</div>
+  </div>
+
+  <div id="hint">scroll to zoom &nbsp;·&nbsp; left drag to orbit &nbsp;·&nbsp; right drag to pan</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// ── SCALE ────────────────────────────────────────────────────
+// 1 unit = 10 mm = 1 cm
+// Plastic disc:  radius 1.27 u (1 inch dia), height 0.5 u (5 mm)
+// NaI crystal:   radius 2.54 u (2 inch dia), length 5.08 u (2 inch)
+// Detector is placed along +Z axis from the disc centre
+
+const DISC_R = 1.27, DISC_H = 0.5;
+const NAI_R  = 2.54, NAI_L  = 5.08;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000810);
+scene.fog = new THREE.FogExp2(0x000810, 0.012);
+
+const camera = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.01, 300);
+camera.position.set(0, 12, 22);
+camera.lookAt(0, 0, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(devicePixelRatio);
+renderer.setSize(innerWidth, innerHeight);
+document.body.prepend(renderer.domElement);
+
+const orbitCtrl = new THREE.OrbitControls(camera, renderer.domElement);
+orbitCtrl.enableDamping = true;
+orbitCtrl.dampingFactor = 0.08;
+orbitCtrl.screenSpacePanning = true;
+orbitCtrl.minDistance = 2;
+orbitCtrl.maxDistance = 120;
+orbitCtrl.target.set(0, 0, 0);
+
+// ── LIGHTING ─────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0x303828, 3.5));
+const dirL = new THREE.DirectionalLight(0xffe8b0, 1.4);
+dirL.position.set(5, 10, 18); scene.add(dirL);
+const dirL2 = new THREE.DirectionalLight(0xaaccff, 0.7);
+dirL2.position.set(-6, 4, 10); scene.add(dirL2);
+const dirL3 = new THREE.DirectionalLight(0xffffff, 0.5);
+dirL3.position.set(0, -5, 15); scene.add(dirL3);
+const srcLight = new THREE.PointLight(0x00dca0, 3, 8);
+scene.add(srcLight);
+
+// NaI glow light — follows crystal, warm yellow
+const naiLight = new THREE.PointLight(0xffe090, 0, 12);
+scene.add(naiLight);
+
+// ── STARS ────────────────────────────────────────────────────
+const sv = [];
+for (let i = 0; i < 2500; i++)
+  sv.push((Math.random()-0.5)*300, (Math.random()-0.5)*300, (Math.random()-0.5)*300);
+const starGeo = new THREE.BufferGeometry();
+starGeo.setAttribute('position', new THREE.Float32BufferAttribute(sv, 3));
+scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0x2a3a4a, size: 0.08 })));
+
+// ── PLASTIC DISC (source) ─────────────────────────────────────
+const discMat = new THREE.MeshPhysicalMaterial({
+  color: 0xb8d8f0, emissive: 0x061520,
+  metalness: 0, roughness: 0.08,
+  transmission: 0.5, thickness: 0.5,
+  transparent: true, opacity: 0.72,
+  side: THREE.DoubleSide, depthWrite: false,
+});
+const disc = new THREE.Mesh(new THREE.CylinderGeometry(DISC_R, DISC_R, DISC_H, 80), discMat);
+disc.rotation.x = Math.PI / 2; // disc face toward +Z (where detector sits)
+scene.add(disc);
+
+// ── NaI CRYSTAL GROUP ────────────────────────────────────────
+// Crystal oriented so its face looks toward -Z (toward the source)
+// Placed along +Z axis; its front face at z = detectorDist
+const naiGroup = new THREE.Group();
+
+// Aluminium housing — almost transparent light gray so crystal is visible through it
+const housingMat = new THREE.MeshPhysicalMaterial({
+  color: 0xdde8ee, metalness: 0.1, roughness: 0.12,
+  transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide,
+});
+const housingOuter = new THREE.Mesh(
+  new THREE.CylinderGeometry(NAI_R + 0.18, NAI_R + 0.18, NAI_L + 0.3, 64),
+  housingMat
+);
+naiGroup.add(housingOuter);
+
+// Front entrance window — also nearly transparent
+const windowMesh = new THREE.Mesh(
+  new THREE.CylinderGeometry(NAI_R + 0.18, NAI_R + 0.18, 0.12, 64),
+  new THREE.MeshPhysicalMaterial({ color: 0xdde8ee, metalness: 0.1, roughness: 0.15, transparent: true, opacity: 0.22, depthWrite: false })
+);
+windowMesh.position.y = -(NAI_L / 2 + 0.06);
+naiGroup.add(windowMesh);
+
+// ── PMT (Photomultiplier Tube) ────────────────────────────────
+// Local Y = tube axis; crystal back face at local y = NAI_L/2
+const PMT_FRONT_Y = NAI_L * 0.5 + 0.15;  // photocathode local-y
+const PMT_BACK_Y  = NAI_L * 1.38;         // anode local-y
+const NUM_DYNODES = 6;
+const DYNODE_Y_LOCAL = [], DYNODE_X_LOCAL = [];
+
+// Glass envelope — nearly transparent so internals show
+const pmtGlassMat = new THREE.MeshPhysicalMaterial({
+  color: 0x99bbdd, metalness: 0, roughness: 0.0,
+  transparent: true, opacity: 0.13, depthWrite: false, side: THREE.DoubleSide,
+});
+const pmtGlass = new THREE.Mesh(
+  new THREE.CylinderGeometry(NAI_R + 0.05, NAI_R + 0.05, NAI_L * 0.9, 48), pmtGlassMat
+);
+pmtGlass.position.y = NAI_L * 0.95;
+naiGroup.add(pmtGlass);
+
+// Metal base cap at rear
+const pmtCapMat = new THREE.MeshStandardMaterial({ color: 0x445566, metalness: 0.7, roughness: 0.3 });
+const pmtCap = new THREE.Mesh(
+  new THREE.CylinderGeometry(NAI_R + 0.05, NAI_R + 0.05, 0.20, 48), pmtCapMat
+);
+pmtCap.position.y = PMT_BACK_Y + 0.10;
+naiGroup.add(pmtCap);
+
+// Photocathode — thin blue-green disc at crystal/PMT interface
+const pcMat = new THREE.MeshPhysicalMaterial({
+  color: 0x44aaff, emissive: 0x0044aa, emissiveIntensity: 0.5,
+  metalness: 0.15, roughness: 0.1, transparent: true, opacity: 0.82,
+});
+const pcMesh = new THREE.Mesh(
+  new THREE.CylinderGeometry(NAI_R - 0.2, NAI_R - 0.2, 0.07, 48), pcMat
+);
+pcMesh.position.y = PMT_FRONT_Y;
+naiGroup.add(pcMesh);
+
+// Dynodes — 6 metallic plates, alternating x-offset to show cascade path
+const DYNODE_SPACING = (PMT_BACK_Y - PMT_FRONT_Y - 0.4) / NUM_DYNODES;
+const DYNODE_SHIFT   = NAI_R * 0.40;
+const DYNODE_W       = NAI_R * 1.25;
+const dynodeMeshes   = [];
+const dynodeMatRefs  = [];
+
+for (let i = 0; i < NUM_DYNODES; i++) {
+  const y      = PMT_FRONT_Y + 0.2 + (i + 0.5) * DYNODE_SPACING;
+  const xShift = (i % 2 === 0) ? -DYNODE_SHIFT : DYNODE_SHIFT;
+  DYNODE_Y_LOCAL.push(y);
+  DYNODE_X_LOCAL.push(xShift);
+  const dMat = new THREE.MeshStandardMaterial({
+    color: 0xccaa44, emissive: 0xffdd44, emissiveIntensity: 0.1,
+    metalness: 0.88, roughness: 0.12,
+  });
+  dynodeMatRefs.push(dMat);
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(DYNODE_W, 0.07, 0.50), dMat);
+  plate.position.set(xShift, y, 0);
+  naiGroup.add(plate);
+  dynodeMeshes.push(plate);
+}
+
+// Anode — small metallic disc at back of PMT
+const anodeMatRef = new THREE.MeshStandardMaterial({
+  color: 0xffcc44, emissive: 0xffaa00, emissiveIntensity: 0.2,
+  metalness: 0.9, roughness: 0.08,
+});
+const anodeMesh = new THREE.Mesh(
+  new THREE.CylinderGeometry(NAI_R - 0.4, NAI_R - 0.4, 0.09, 40), anodeMatRef
+);
+anodeMesh.position.y = PMT_BACK_Y;
+naiGroup.add(anodeMesh);
+
+// PMT cascade data structures
+const pmtElectrons     = [];
+const anodePulses      = [];
+const dynodeFlashLives = new Array(NUM_DYNODES).fill(0);
+let pcGlowLife = 0, anodePulseLife = 0;
+const MAX_ELECTRONS = 18;
+
+// NaI crystal — solid, vivid yellow so it pops against the dark background
+const crystalMat = new THREE.MeshPhysicalMaterial({
+  color: 0xffe033,
+  emissive: 0x442200,
+  emissiveIntensity: 0.4,
+  metalness: 0, roughness: 0.06,
+  transparent: true, opacity: 0.90,
+  side: THREE.DoubleSide,
+});
+const crystal = new THREE.Mesh(
+  new THREE.CylinderGeometry(NAI_R, NAI_R, NAI_L, 64),
+  crystalMat
+);
+naiGroup.add(crystal);
+
+// Crystal glow sphere (scintillation atmosphere)
+const glowCrystalMat = new THREE.MeshBasicMaterial({
+  color: 0xff1100, transparent: true, opacity: 0.0, depthWrite: false
+});
+const glowCrystal = new THREE.Mesh(new THREE.SphereGeometry(NAI_R * 1.1, 24, 24), glowCrystalMat);
+naiGroup.add(glowCrystal);
+
+// NaI group: cylinder axis is Y; rotate so Y points along +Z (toward source = -Z is front face)
+// We want crystal front face toward source (-Z direction), so rotate 90° around X
+naiGroup.rotation.x = Math.PI / 2;
+scene.add(naiGroup);
+
+// ── DETECTOR DISTANCE ─────────────────────────────────────────
+// Distance = gap from disc surface (z=DISC_H/2 after rotation) to crystal front face
+// crystal front face is at naiGroup.position.z - NAI_L/2 (in world space after rotation)
+let detDistCm = 10; // cm → units (1 unit = 1 cm)
+
+function setDetectorDistance(cm) {
+  detDistCm = cm;
+  const frontFaceZ = DISC_H / 2 + cm;
+  const centreZ = frontFaceZ + NAI_L / 2;
+  naiGroup.position.z = centreZ;
+  naiLight.position.z = centreZ;
+  document.getElementById('dist-val').textContent = cm.toFixed(1) + ' cm';
+  document.getElementById('distSliderVal').textContent = cm.toFixed(1) + ' cm';
+  pmtElectrons.forEach(e => { scene.remove(e.mesh); e.mesh.geometry.dispose(); e.mesh.material.dispose(); });
+  pmtElectrons.length = 0;
+  anodePulses.forEach(p => { scene.remove(p.mesh); p.mesh.geometry.dispose(); p.mesh.material.dispose(); });
+  anodePulses.length = 0;
+}
+
+setDetectorDistance(detDistCm);
+
+// ── PMT CASCADE FUNCTIONS ─────────────────────────────────────
+// Convert naiGroup local coords to world:  rotation.x=PI/2 → Y→Z, Z→-Y
+function pmtLocalToWorld(lx, ly, lz) {
+  return new THREE.Vector3(lx, -lz, naiGroup.position.z + ly);
+}
+
+function spawnElectron(fromW, targetStage) {
+  if (pmtElectrons.length >= MAX_ELECTRONS) return;
+  let toW;
+  if (targetStage < NUM_DYNODES) {
+    const j = 0.22;
+    toW = pmtLocalToWorld(
+      DYNODE_X_LOCAL[targetStage] + (Math.random()-0.5)*j,
+      DYNODE_Y_LOCAL[targetStage],
+      (Math.random()-0.5)*j
+    );
+  } else {
+    toW = pmtLocalToWorld((Math.random()-0.5)*0.9, PMT_BACK_Y, (Math.random()-0.5)*0.9);
+  }
+  const mat  = new THREE.MeshBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 1.0 });
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.055, 6, 6), mat);
+  mesh.position.copy(fromW);
+  scene.add(mesh);
+  pmtElectrons.push({ mesh, fromW: fromW.clone(), toW, progress: 0,
+    targetStage, speed: 3.0 + Math.random()*2.5 });
+}
+
+function triggerPMTCascade() {
+  pcGlowLife = 1.0;
+  const nPE = 1 + Math.floor(Math.random()*2);
+  for (let k = 0; k < nPE; k++) {
+    const fromW = pmtLocalToWorld((Math.random()-0.5)*0.6, PMT_FRONT_Y, (Math.random()-0.5)*0.6);
+    spawnElectron(fromW, 0);
+  }
+}
+
+function triggerAnodePulse(posW) {
+  anodePulseLife = 1.0;
+  const mat  = new THREE.MeshBasicMaterial({ color: 0xffee88, transparent: true, opacity: 1.0 });
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 10), mat);
+  mesh.position.copy(posW);
+  scene.add(mesh);
+  anodePulses.push({ mesh, life: 1.0 });
+}
+
+// ── GAMMA RAYS ────────────────────────────────────────────────
+const gammaRays = [];
+const flashes = [];
+const scintFlashes = [];
+let totalDetected = 0;
+
+function randomSphereDir() {
+  const theta = Math.random() * Math.PI * 2;
+  const phi = Math.acos(2 * Math.random() - 1);
+  return new THREE.Vector3(Math.sin(phi)*Math.cos(theta), Math.sin(phi)*Math.sin(theta), Math.cos(phi));
+}
+
+// Check if a ray hits the NaI crystal face (cylinder in +Z direction)
+// Crystal front face at z = DISC_H/2 + detDistCm
+// Crystal spans z from frontFaceZ to frontFaceZ + NAI_L
+// Crystal radius NAI_R
+function rayHitsDetector(dir) {
+  if (dir.z <= 0) return false; // going away from detector
+  const frontZ = DISC_H / 2 + detDistCm;
+  const t = frontZ / dir.z;          // param when ray reaches front face z
+  const x = dir.x * t, y = dir.y * t;
+  return Math.sqrt(x*x + y*y) <= NAI_R;
+}
+
+function spawnGamma() {
+  const dir = randomSphereDir();
+  const hitsDetector = rayHitsDetector(dir);
+
+  const geo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0,0,0), dir.clone().multiplyScalar(0.01)
+  ]);
+  const mat = new THREE.LineBasicMaterial({ transparent: true, opacity: 1.0 });
+  mat.color.setHSL(0.45 + Math.random()*0.06, 1.0, 0.72 + Math.random()*0.18);
+  const line = new THREE.Line(geo, mat);
+  scene.add(line);
+
+  // Decay flash at source
+  const flashMat = new THREE.MeshBasicMaterial({ color: 0xffee66, transparent: true, opacity: 0.8 });
+  const flash = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), flashMat);
+  scene.add(flash);
+  flashes.push({ mesh: flash, life: 1.0, decay: 8 });
+
+  // Stop distance: if hits detector, stop at crystal centre; else travel off-screen
+  const maxTravel = hitsDetector ? (DISC_H/2 + detDistCm + NAI_L/2) : 22;
+
+  gammaRays.push({
+    line, dir: dir.clone(),
+    head: 0.01, tail: 0,
+    trailLen: 0.7 + Math.random()*0.7,
+    baseHue: 0.45 + Math.random()*0.06,
+    hitsDetector,
+    maxTravel,
+    detected: false
+  });
+
+}
+
+function triggerScintillation(pos) {
+  const mat = new THREE.MeshBasicMaterial({ color: 0xff1100, transparent: true, opacity: 1.0 });
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 12), mat);
+  mesh.position.copy(pos);
+  scene.add(mesh);
+  scintFlashes.push({ mesh, life: 1.0, decay: 5 });
+  triggerPMTCascade();
+  totalDetected++;
+  document.getElementById('total-count').textContent = totalDetected.toLocaleString();
+}
+
+// Controls
+let emitRate = 8, raySpeed = 4;
+document.getElementById('rateSlider').addEventListener('input', function() {
+  emitRate = +this.value; document.getElementById('rateVal').textContent = emitRate + '/s';
+});
+document.getElementById('speedSlider').addEventListener('input', function() {
+  raySpeed = +this.value; document.getElementById('speedVal').textContent = raySpeed + '×';
+});
+document.getElementById('distSlider').addEventListener('input', function() {
+  setDetectorDistance(+this.value);
+});
+
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+let emitAccum = 0, lastTime = performance.now();
+let scintGlow = 0; // rolling glow intensity for NaI
+
+function animate() {
+  requestAnimationFrame(animate);
+  const now = performance.now();
+  const dt = Math.min((now - lastTime)/1000, 0.05);
+  lastTime = now;
+
+  orbitCtrl.update();
+
+  // Source pulse
+  const pulse = Math.sin(now * 0.0025) * 0.5 + 0.5;
+  srcLight.intensity = 1.2 + pulse * 2.0;
+  discMat.emissiveIntensity = 0.03 + pulse * 0.04;
+
+  // Crystal glow decay
+  scintGlow = Math.max(0, scintGlow - dt * 3.5);
+  naiLight.intensity = scintGlow * 4;
+  glowCrystalMat.opacity = scintGlow * 0.18;
+  crystalMat.emissiveIntensity = 0.04 + scintGlow * 0.6;
+
+  // Emit gammas
+  emitAccum += dt;
+  const interval = 1 / emitRate;
+  while (emitAccum >= interval) { spawnGamma(); emitAccum -= interval; }
+
+  const speed = raySpeed * 3;
+  for (let i = gammaRays.length - 1; i >= 0; i--) {
+    const r = gammaRays[i];
+    r.head += dt * speed;
+    r.tail = Math.max(0, r.head - r.trailLen);
+
+    // Trigger scintillation when head reaches detector
+    if (r.hitsDetector && !r.detected && r.head >= r.maxTravel) {
+      r.detected = true;
+      // Position inside crystal
+      const hitX = r.dir.x * (DISC_H/2 + detDistCm + NAI_L * (0.2 + Math.random()*0.6));
+      const hitY = r.dir.y * (DISC_H/2 + detDistCm + NAI_L * (0.2 + Math.random()*0.6));
+      const hitZ = DISC_H/2 + detDistCm + NAI_L * (0.2 + Math.random()*0.6);
+      triggerScintillation(new THREE.Vector3(hitX, hitY, hitZ));
+      scintGlow = Math.min(1, scintGlow + 0.6);
+    }
+
+    // Remove when tail passes max travel (or off-screen for misses)
+    if (r.tail > r.maxTravel + 0.5) {
+      scene.remove(r.line);
+      r.line.geometry.dispose();
+      r.line.material.dispose();
+      gammaRays.splice(i, 1);
+      continue;
+    }
+
+    // Clamp head at maxTravel for detector hits
+    const drawHead = r.hitsDetector ? Math.min(r.head, r.maxTravel) : r.head;
+    const p0 = r.dir.clone().multiplyScalar(r.tail);
+    const p1 = r.dir.clone().multiplyScalar(drawHead);
+    r.line.geometry.setFromPoints([p0, p1]);
+    r.line.geometry.attributes.position.needsUpdate = true;
+
+    // Colour: bluish in disc, yellow inside NaI, cyan in air
+    const mid = r.dir.clone().multiplyScalar((drawHead + r.tail) * 0.5);
+    const inDisc = Math.abs(mid.z) < DISC_H * 0.5 && Math.sqrt(mid.x*mid.x + mid.y*mid.y) < DISC_R;
+    const frontZ = DISC_H/2 + detDistCm;
+    const inNaI  = mid.z > frontZ && mid.z < frontZ + NAI_L && Math.sqrt(mid.x*mid.x + mid.y*mid.y) < NAI_R;
+    if (inNaI)       r.line.material.color.setHSL(0.14, 1.0, 0.80);
+    else if (inDisc) r.line.material.color.setHSL(0.58, 0.8, 0.88);
+    else             r.line.material.color.setHSL(r.baseHue, 1.0, 0.75);
+
+    r.line.material.opacity = r.hitsDetector ? 0.95 : Math.max(0, 1 - drawHead / 20);
+  }
+
+  // Source flashes
+  for (let i = flashes.length - 1; i >= 0; i--) {
+    const f = flashes[i];
+    f.life -= dt * 8;
+    f.mesh.material.opacity = Math.max(0, f.life * 0.85);
+    f.mesh.scale.setScalar(1 + (1-f.life)*1.8);
+    if (f.life <= 0) { scene.remove(f.mesh); f.mesh.geometry.dispose(); f.mesh.material.dispose(); flashes.splice(i,1); }
+  }
+
+  // Scintillation flashes
+  for (let i = scintFlashes.length - 1; i >= 0; i--) {
+    const f = scintFlashes[i];
+    f.life -= dt * f.decay;
+    f.mesh.material.opacity = Math.max(0, f.life);
+    f.mesh.scale.setScalar(1 + (1-f.life)*3);
+    if (f.life <= 0) { scene.remove(f.mesh); f.mesh.geometry.dispose(); f.mesh.material.dispose(); scintFlashes.splice(i,1); }
+  }
+
+  // Photocathode glow when hit by scintillation photons
+  pcGlowLife = Math.max(0, pcGlowLife - dt * 5);
+  pcMat.emissiveIntensity = 0.5 + pcGlowLife * 3.0;
+
+  // Dynode flash when electrons strike
+  for (let d = 0; d < NUM_DYNODES; d++) {
+    dynodeFlashLives[d] = Math.max(0, dynodeFlashLives[d] - dt * 6);
+    dynodeMatRefs[d].emissiveIntensity = 0.1 + dynodeFlashLives[d] * 2.5;
+  }
+
+  // Anode glow on pulse
+  anodePulseLife = Math.max(0, anodePulseLife - dt * 4.5);
+  anodeMatRef.emissiveIntensity = 0.2 + anodePulseLife * 4.0;
+
+  // Electron cascade — move particles, trigger multiplication on arrival
+  for (let i = pmtElectrons.length - 1; i >= 0; i--) {
+    const e = pmtElectrons[i];
+    e.progress = Math.min(1, e.progress + dt * e.speed);
+    e.mesh.position.lerpVectors(e.fromW, e.toW, e.progress);
+    e.mesh.material.opacity = 0.6 + 0.4 * Math.sin(e.progress * Math.PI);
+    if (e.progress >= 1) {
+      scene.remove(e.mesh); e.mesh.geometry.dispose(); e.mesh.material.dispose();
+      pmtElectrons.splice(i, 1);
+      if (e.targetStage < NUM_DYNODES) {
+        dynodeFlashLives[e.targetStage] = 1.0;
+        const n = Math.min(3, MAX_ELECTRONS - pmtElectrons.length);
+        for (let k = 0; k < n; k++) spawnElectron(e.toW.clone(), e.targetStage + 1);
+      } else {
+        triggerAnodePulse(e.toW.clone());
+      }
+    }
+  }
+
+  // Anode output pulse spheres
+  for (let i = anodePulses.length - 1; i >= 0; i--) {
+    const p = anodePulses[i];
+    p.life -= dt * 5;
+    p.mesh.material.opacity = Math.max(0, p.life);
+    p.mesh.scale.setScalar(1 + (1 - p.life) * 2.5);
+    if (p.life <= 0) {
+      scene.remove(p.mesh); p.mesh.geometry.dispose(); p.mesh.material.dispose();
+      anodePulses.splice(i, 1);
+    }
+  }
+
+  renderer.render(scene, camera);
+}
+
+animate();
+</script>
+</body>
+</html>
