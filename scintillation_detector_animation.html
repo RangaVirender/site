@@ -129,7 +129,7 @@ scene.background = new THREE.Color(0x000810);
 scene.fog = new THREE.FogExp2(0x000810, 0.012);
 
 const camera = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.01, 300);
-camera.position.set(0, 12, 22);
+camera.position.set(-28, 5, 0);
 camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -230,6 +230,16 @@ const pmtCap = new THREE.Mesh(
 pmtCap.position.y = PMT_BACK_Y + 0.10;
 naiGroup.add(pmtCap);
 
+// Output signal wire — 1 inch (2.54 cm) straight wire exiting the PMT along the tube axis
+const wireMat = new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 0.85, roughness: 0.25 });
+const WIRE_LENGTH = 2.54;
+const wireMesh = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.05, 0.05, WIRE_LENGTH, 8),
+  wireMat
+);
+wireMesh.position.y = PMT_BACK_Y + 0.20 + WIRE_LENGTH / 2;
+naiGroup.add(wireMesh);
+
 // Photocathode — thin blue-green disc at crystal/PMT interface
 const pcMat = new THREE.MeshPhysicalMaterial({
   color: 0x44aaff, emissive: 0x0044aa, emissiveIntensity: 0.5,
@@ -241,12 +251,17 @@ const pcMesh = new THREE.Mesh(
 pcMesh.position.y = PMT_FRONT_Y;
 naiGroup.add(pcMesh);
 
-// Dynodes — 6 metallic plates, alternating x-offset to show cascade path
-const DYNODE_SPACING = (PMT_BACK_Y - PMT_FRONT_Y - 0.4) / NUM_DYNODES;
-const DYNODE_SHIFT   = NAI_R * 0.40;
-const DYNODE_W       = NAI_R * 1.25;
-const dynodeMeshes   = [];
-const dynodeMatRefs  = [];
+// Dynodes — 6 curved cylindrical-shell arcs (half-annulus), alternating open-left/open-right
+// Arc centers sit on the PMT axis (xShift=0); cups alternate opening ±X.
+//   Even i: thetaStart = +PI/2  →  "(" arc, opening toward −X
+//   Odd  i: thetaStart = −PI/2  →  ")" arc, opening toward +X
+const DYNODE_SPACING  = (PMT_BACK_Y - PMT_FRONT_Y - 0.4) / NUM_DYNODES;
+const DYNODE_SHIFT    = 0;      // arc centers on PMT axis
+const DYNODE_INNER_R  = 0.5;   // inner radius of cylindrical shell (0.5 cm)
+const DYNODE_OUTER_R  = 0.6;   // outer radius: inner + 1 mm wall thickness
+const DYNODE_DEPTH    = 0.35;  // extent along group-local Z axis
+const dynodeMeshes    = [];
+const dynodeMatRefs   = [];
 
 for (let i = 0; i < NUM_DYNODES; i++) {
   const y      = PMT_FRONT_Y + 0.2 + (i + 0.5) * DYNODE_SPACING;
@@ -256,9 +271,22 @@ for (let i = 0; i < NUM_DYNODES; i++) {
   const dMat = new THREE.MeshStandardMaterial({
     color: 0xccaa44, emissive: 0xffdd44, emissiveIntensity: 0.1,
     metalness: 0.88, roughness: 0.12,
+    side: THREE.DoubleSide,
   });
   dynodeMatRefs.push(dMat);
-  const plate = new THREE.Mesh(new THREE.BoxGeometry(DYNODE_W, 0.07, 0.50), dMat);
+  const thetaStart = (i % 2 === 0) ? Math.PI / 2 : -Math.PI / 2;
+  // Ring-sector shape: outer arc → radial edge → inner arc (reversed) → close
+  const shape = new THREE.Shape();
+  shape.moveTo(DYNODE_OUTER_R * Math.cos(thetaStart), DYNODE_OUTER_R * Math.sin(thetaStart));
+  shape.absarc(0, 0, DYNODE_OUTER_R, thetaStart, thetaStart + Math.PI, false);
+  shape.lineTo(DYNODE_INNER_R * Math.cos(thetaStart + Math.PI), DYNODE_INNER_R * Math.sin(thetaStart + Math.PI));
+  shape.absarc(0, 0, DYNODE_INNER_R, thetaStart + Math.PI, thetaStart, true);
+  shape.closePath();
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: DYNODE_DEPTH, bevelEnabled: false, steps: 1, curveSegments: 32,
+  });
+  geo.translate(0, 0, -DYNODE_DEPTH / 2);  // center along Z
+  const plate = new THREE.Mesh(geo, dMat);
   plate.position.set(xShift, y, 0);
   naiGroup.add(plate);
   dynodeMeshes.push(plate);
@@ -277,7 +305,6 @@ naiGroup.add(anodeMesh);
 
 // PMT cascade data structures
 const pmtElectrons     = [];
-const anodePulses      = [];
 const dynodeFlashLives = new Array(NUM_DYNODES).fill(0);
 let pcGlowLife = 0, anodePulseLife = 0;
 const MAX_ELECTRONS = 18;
@@ -307,6 +334,7 @@ naiGroup.add(glowCrystal);
 // NaI group: cylinder axis is Y; rotate so Y points along +Z (toward source = -Z is front face)
 // We want crystal front face toward source (-Z direction), so rotate 90° around X
 naiGroup.rotation.x = Math.PI / 2;
+naiGroup.rotation.y = Math.PI / 2;
 scene.add(naiGroup);
 
 // ── DETECTOR DISTANCE ─────────────────────────────────────────
@@ -324,8 +352,6 @@ function setDetectorDistance(cm) {
   document.getElementById('distSliderVal').textContent = cm.toFixed(1) + ' cm';
   pmtElectrons.forEach(e => { scene.remove(e.mesh); e.mesh.geometry.dispose(); e.mesh.material.dispose(); });
   pmtElectrons.length = 0;
-  anodePulses.forEach(p => { scene.remove(p.mesh); p.mesh.geometry.dispose(); p.mesh.material.dispose(); });
-  anodePulses.length = 0;
 }
 
 setDetectorDistance(detDistCm);
@@ -333,47 +359,50 @@ setDetectorDistance(detDistCm);
 // ── PMT CASCADE FUNCTIONS ─────────────────────────────────────
 // Convert naiGroup local coords to world:  rotation.x=PI/2 → Y→Z, Z→-Y
 function pmtLocalToWorld(lx, ly, lz) {
-  return new THREE.Vector3(lx, -lz, naiGroup.position.z + ly);
+  return new THREE.Vector3(lz, lx, naiGroup.position.z + ly);
 }
 
-function spawnElectron(fromW, targetStage) {
+// Returns the cup-opening x in group-local space (the concave mouth of the arc)
+function dynodeCupOpeningX(stageIdx) {
+  return stageIdx % 2 === 0 ? -DYNODE_INNER_R : DYNODE_INNER_R;
+}
+
+// Quadratic Bézier electron path: p0 → p1 (control, tube center) → p2 (target)
+// The control point sits at the tube center midway in Y so the arc naturally
+// bows away from all dynode plates on both sides.
+function spawnElectron(p0w, targetStage) {
   if (pmtElectrons.length >= MAX_ELECTRONS) return;
-  let toW;
+  const p0LocalY = p0w.z - naiGroup.position.z;   // group-local Y of start
+
+  let p1w, p2w;
   if (targetStage < NUM_DYNODES) {
-    const j = 0.22;
-    toW = pmtLocalToWorld(
-      DYNODE_X_LOCAL[targetStage] + (Math.random()-0.5)*j,
-      DYNODE_Y_LOCAL[targetStage],
-      (Math.random()-0.5)*j
-    );
+    const ty    = DYNODE_Y_LOCAL[targetStage];
+    const openX = dynodeCupOpeningX(targetStage);
+    p2w = pmtLocalToWorld(openX + (Math.random()-0.5)*0.18, ty + (Math.random()-0.5)*0.28, (Math.random()-0.5)*0.12);
+    p1w = pmtLocalToWorld(0, (p0LocalY + ty) * 0.5, 0);   // tube center midpoint
   } else {
-    toW = pmtLocalToWorld((Math.random()-0.5)*0.9, PMT_BACK_Y, (Math.random()-0.5)*0.9);
+    p2w = pmtLocalToWorld((Math.random()-0.5)*0.65, PMT_BACK_Y, (Math.random()-0.5)*0.12);
+    p1w = pmtLocalToWorld(0, (p0LocalY + PMT_BACK_Y) * 0.5, 0);
   }
+
   const mat  = new THREE.MeshBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 1.0 });
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.055, 6, 6), mat);
-  mesh.position.copy(fromW);
+  mesh.position.copy(p0w);
   scene.add(mesh);
-  pmtElectrons.push({ mesh, fromW: fromW.clone(), toW, progress: 0,
-    targetStage, speed: 3.0 + Math.random()*2.5 });
+  pmtElectrons.push({ mesh, p0: p0w.clone(), p1: p1w, p2: p2w,
+    progress: 0, targetStage, speed: 3.2 + Math.random()*2.2 });
 }
 
 function triggerPMTCascade() {
   pcGlowLife = 1.0;
   const nPE = 1 + Math.floor(Math.random()*2);
   for (let k = 0; k < nPE; k++) {
-    const fromW = pmtLocalToWorld((Math.random()-0.5)*0.6, PMT_FRONT_Y, (Math.random()-0.5)*0.6);
-    spawnElectron(fromW, 0);
+    // Photoelectrons emitted from the cathode face
+    const p0w = pmtLocalToWorld((Math.random()-0.5)*0.4, PMT_FRONT_Y, (Math.random()-0.5)*0.18);
+    spawnElectron(p0w, 0);
   }
 }
 
-function triggerAnodePulse(posW) {
-  anodePulseLife = 1.0;
-  const mat  = new THREE.MeshBasicMaterial({ color: 0xffee88, transparent: true, opacity: 1.0 });
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 10), mat);
-  mesh.position.copy(posW);
-  scene.add(mesh);
-  anodePulses.push({ mesh, life: 1.0 });
-}
 
 // ── GAMMA RAYS ────────────────────────────────────────────────
 const gammaRays = [];
@@ -565,11 +594,17 @@ function animate() {
   anodePulseLife = Math.max(0, anodePulseLife - dt * 4.5);
   anodeMatRef.emissiveIntensity = 0.2 + anodePulseLife * 4.0;
 
-  // Electron cascade — move particles, trigger multiplication on arrival
+  // Electron cascade — quadratic Bézier: p0→p1(tube center)→p2(cup opening)
+  // Path always arcs through the tube center, never through any dynode plate.
   for (let i = pmtElectrons.length - 1; i >= 0; i--) {
     const e = pmtElectrons[i];
     e.progress = Math.min(1, e.progress + dt * e.speed);
-    e.mesh.position.lerpVectors(e.fromW, e.toW, e.progress);
+    const t = e.progress, s = 1 - t;
+    e.mesh.position.set(
+      s*s*e.p0.x + 2*s*t*e.p1.x + t*t*e.p2.x,
+      s*s*e.p0.y + 2*s*t*e.p1.y + t*t*e.p2.y,
+      s*s*e.p0.z + 2*s*t*e.p1.z + t*t*e.p2.z
+    );
     e.mesh.material.opacity = 0.6 + 0.4 * Math.sin(e.progress * Math.PI);
     if (e.progress >= 1) {
       scene.remove(e.mesh); e.mesh.geometry.dispose(); e.mesh.material.dispose();
@@ -577,24 +612,14 @@ function animate() {
       if (e.targetStage < NUM_DYNODES) {
         dynodeFlashLives[e.targetStage] = 1.0;
         const n = Math.min(3, MAX_ELECTRONS - pmtElectrons.length);
-        for (let k = 0; k < n; k++) spawnElectron(e.toW.clone(), e.targetStage + 1);
+        // Spawn secondaries from the cup opening (p2) — outside the dynode body
+        for (let k = 0; k < n; k++) spawnElectron(e.p2.clone(), e.targetStage + 1);
       } else {
-        triggerAnodePulse(e.toW.clone());
+        anodePulseLife = 1.0;
       }
     }
   }
 
-  // Anode output pulse spheres
-  for (let i = anodePulses.length - 1; i >= 0; i--) {
-    const p = anodePulses[i];
-    p.life -= dt * 5;
-    p.mesh.material.opacity = Math.max(0, p.life);
-    p.mesh.scale.setScalar(1 + (1 - p.life) * 2.5);
-    if (p.life <= 0) {
-      scene.remove(p.mesh); p.mesh.geometry.dispose(); p.mesh.material.dispose();
-      anodePulses.splice(i, 1);
-    }
-  }
 
   renderer.render(scene, camera);
 }
