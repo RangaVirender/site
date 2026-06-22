@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V. Ranga — Activities</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F7F4EF; --bg-card: #FFFFFF; --bg-card-hover: #F0EBE3;
+    --slate: #2D4A7A; --teal: #2A6B6B; --gold: #A0681C; --gold-light: #B8782A;
+    --text: #1A2B42; --text-muted: #6B7C93; --track-width: 2px;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  #particle-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.18; }
+  header { z-index: 10; padding: 0 clamp(1.5rem,5vw,4rem); border-bottom: 1px solid rgba(160,104,28,0.15); background: rgba(247,244,239,0.9); backdrop-filter: blur(12px); position: sticky; top: 0; }
+  nav { display: flex; align-items: center; height: 64px; max-width: 1100px; margin: 0 auto; }
+  .nav-logo { font-size: 1.1rem; font-weight: 600; letter-spacing: 0.08em; color: var(--gold); text-decoration: none; }
+  .hero { position: relative; z-index: 5; max-width: 1100px; margin: 0 auto; padding: clamp(3rem,8vw,6rem) clamp(1.5rem,5vw,4rem) clamp(2rem,5vw,4rem); display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 2rem; }
+  .hero-eyebrow { font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem; }
+  .hero-eyebrow::before { content: ''; display: block; width: 32px; height: 1px; background: var(--gold); }
+  h1 { font-family: 'Lora', serif; font-size: clamp(2.4rem,5vw,4rem); font-weight: 500; line-height: 1.1; letter-spacing: -0.02em; color: var(--text); }
+  h1 em { font-style: italic; color: var(--gold-light); }
+  .hero-sub { margin-top: 1.25rem; font-size: 0.95rem; color: var(--text-muted); max-width: 480px; line-height: 1.7; font-family: 'Lora', serif; font-style: italic; }
+  .hero-stats { display: flex; flex-direction: column; gap: 1.25rem; align-items: flex-end; }
+  .stat { text-align: right; }
+  .stat-num { font-size: 2.2rem; font-weight: 700; color: var(--gold); line-height: 1; }
+  .stat-label { font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-top: 0.2rem; }
+  .tabs-wrapper { position: relative; z-index: 5; max-width: 1100px; margin: 0 auto; padding: 0 clamp(1.5rem,5vw,4rem); }
+  .tabs { display: flex; border-bottom: 1px solid rgba(0,0,0,0.1); }
+  .tab-btn { background: none; border: none; cursor: pointer; padding: 0.85rem 1.6rem; font-family: 'Space Grotesk', sans-serif; font-size: 0.82rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.2s, border-color 0.2s; display: flex; align-items: center; gap: 0.5rem; }
+  .tab-btn .count { font-size: 0.68rem; background: rgba(160,104,28,0.12); color: var(--gold); border-radius: 99px; padding: 0.1rem 0.45rem; }
+  .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+  .main { position: relative; z-index: 5; max-width: 1100px; margin: 0 auto; padding: clamp(2rem,5vw,3.5rem) clamp(1.5rem,5vw,4rem); display: grid; grid-template-columns: 160px 1fr; gap: 3rem; align-items: start; }
+  .year-nav { position: sticky; top: 88px; display: flex; flex-direction: column; gap: 0.5rem; }
+  .year-nav-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; }
+  .year-link { font-size: 0.82rem; font-weight: 500; color: var(--text-muted); text-decoration: none; transition: color 0.2s, transform 0.2s; display: flex; align-items: center; gap: 0.4rem; padding: 0.15rem 0; }
+  .year-link::before { content: ''; display: block; width: 0; height: 1px; background: var(--gold); transition: width 0.2s; }
+  .year-link:hover, .year-link.active { color: var(--gold); transform: translateX(4px); }
+  .year-link:hover::before, .year-link.active::before { width: 14px; }
+  .section-panel { display: none; }
+  .section-panel.active { display: block; }
+  .timeline { position: relative; padding-left: 2.5rem; }
+  .timeline::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 0; width: var(--track-width); background: linear-gradient(to bottom, var(--gold) 0%, var(--slate) 60%, transparent 100%); border-radius: 2px; }
+  .year-group { margin-bottom: 2.5rem; }
+  .year-heading { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.2rem; }
+  .year-node { position: absolute; left: calc(-1px - 7px); width: 16px; height: 16px; border-radius: 50%; background: var(--bg); border: var(--track-width) solid var(--gold); box-shadow: 0 0 6px rgba(160,104,28,0.3); transition: transform 0.2s, box-shadow 0.2s; }
+  .year-group:hover .year-node { transform: scale(1.3); box-shadow: 0 0 12px rgba(160,104,28,0.5); }
+  .year-label { font-size: 1.05rem; font-weight: 700; color: var(--gold); letter-spacing: 0.05em; }
+  .year-divider { flex: 1; height: 1px; background: linear-gradient(to right, rgba(160,104,28,0.25), transparent); }
+  .event-card { background: var(--bg-card); border: 1px solid rgba(0,0,0,0.07); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 0.65rem; transition: background 0.2s, border-color 0.2s, transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .event-card:hover { background: var(--bg-card-hover); border-color: rgba(160,104,28,0.25); transform: translateX(4px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .event-type { font-size: 0.64rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 600; margin-bottom: 0.4rem; display: inline-block; padding: 0.15rem 0.55rem; border-radius: 3px; }
+  .type-oral    { background: rgba(160,104,28,0.12); color: #8A5510; }
+  .type-seminar { background: rgba(42,107,107,0.12); color: #1E6060; }
+  .type-poster  { background: rgba(80,50,160,0.1);  color: #5030A0; }
+  .type-attend  { background: rgba(40,110,40,0.1);  color: #2A6E2A; }
+  .type-award   { background: rgba(180,40,40,0.1);  color: #B02020; }
+  .type-course  { background: rgba(100,70,10,0.1);  color: #7A5010; }
+  .type-other   { background: rgba(80,80,80,0.08);  color: #505050; }
+  .event-text { font-family: 'Lora', serif; font-size: 0.92rem; line-height: 1.65; color: var(--text); }
+  .event-text a { color: var(--gold); text-decoration: none; border-bottom: 1px solid rgba(160,104,28,0.3); transition: border-color 0.2s; }
+  .event-text a:hover { border-color: var(--gold); }
+  .event-venue { margin-top: 0.4rem; font-size: 0.76rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem; }
+  .event-venue::before { content: '◈'; color: var(--teal); font-size: 0.6rem; }
+  .membership-grid { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
+  .membership-pill { background: rgba(42,107,107,0.08); border: 1px solid rgba(42,107,107,0.25); border-radius: 6px; padding: 0.8rem 1.2rem; font-size: 0.88rem; color: var(--teal); }
+  footer { position: relative; z-index: 5; border-top: 1px solid rgba(0,0,0,0.07); padding: 2rem clamp(1.5rem,5vw,4rem); text-align: center; font-size: 0.75rem; color: var(--text-muted); letter-spacing: 0.08em; }
+  footer a { color: var(--gold); text-decoration: none; }
+  @media (max-width: 760px) {
+    .hero { grid-template-columns: 1fr; }
+    .hero-stats { flex-direction: row; align-items: flex-start; }
+    .stat { text-align: left; }
+    .main { grid-template-columns: 1fr; }
+    .year-nav { display: none; }
+    .tabs { overflow-x: auto; white-space: nowrap; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<canvas id="particle-bg"></canvas>
+
+<header>
+  <nav>
+    <a href="https://www.vranga.in/home" class="nav-logo">V. RANGA</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div>
+    <p class="hero-eyebrow">Virender Ranga · TIFR Mumbai</p>
+    <h1>Academic <em>Activities</em> &amp; Outreach</h1>
+    <p class="hero-sub">Presentations, seminars, workshops, and community service spanning nuclear physics, astrophysics, and science education.</p>
+  </div>
+  <div class="hero-stats">
+    <div class="stat">
+      <div class="stat-num" id="stat-years">—</div>
+      <div class="stat-label">Years Active</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="stat-presentations">—</div>
+      <div class="stat-label">Presentations</div>
+    </div>
+  </div>
+</section>
+
+<div class="tabs-wrapper">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="academic">Academic <span class="count" id="count-academic">0</span></button>
+    <button class="tab-btn" data-tab="extracurricular">Extra-Curricular <span class="count" id="count-extracurricular">0</span></button>
+    <button class="tab-btn" data-tab="memberships">Memberships <span class="count" id="count-memberships">0</span></button>
+  </div>
+</div>
+
+<div class="main">
+  <nav class="year-nav" id="year-nav"></nav>
+  <div id="panels"></div>
+</div>
+
+<footer>
+  <p>Copyright © Virender Ranga — 2026 &nbsp;·&nbsp; <a href="https://www.vranga.in/home">vranga.in</a></p>
+</footer>
+
+<script>
+// ============================================================
+//  DATA — add new entries here
+//  Fields:
+//    year    : string  — e.g. "2026" or "2019–2020"
+//    type    : one of  oral | seminar | poster | attend | award | course | other
+//    label   : string  — badge text shown on the card
+//    text    : string  — main description (HTML allowed for links)
+//    venue   : string  — optional location / date line
+// ============================================================
+
+const ACADEMIC = [
+  {
+    year: "2026",
+    type: "oral",
+    label: "Oral Presentation",
+    text: "Measurements of Response of LaBr\u2082.\u2088\u2085Cl\u2080.\u2081\u2085:Ce, LaBr\u2083:Ce and NaI(Tl) Crystals to Fast and Thermal Neutrons",
+    venue: "Technology and Instrumentation in Particle Physics Conference, 2\u20136 Feb 2026 \u00b7 TIFR, Mumbai, India"
+  },
+  {
+    year: "2025",
+    type: "oral",
+    label: "Oral Presentation",
+    text: "Measurements of \u00b2H(p, \u03b3)\u00b3He cross sections from 5 to 20 MeV",
+    venue: "69th DAE Symposium on Nuclear Physics, Dec 8\u201312, 2025 \u00b7 NIT Jalandhar, Punjab, India"
+  },
+  {
+    year: "2025",
+    type: "seminar",
+    label: "Journal Club",
+    text: "Introduction to High Energy Gamma-Ray Lab",
+    venue: "11 October 2025 \u00b7 DNAP, TIFR, Mumbai"
+  },
+  {
+    year: "2025",
+    type: "seminar",
+    label: "Journal Club",
+    text: "Radio-resistance and radio-synthesis in micro-organisms",
+    venue: "19 July 2025 \u00b7 DNAP, TIFR, Mumbai"
+  },
+  {
+    year: "2025",
+    type: "oral",
+    label: "Invited Lecture",
+    text: "Proton and Alpha Induced Reactions on Light Nuclei for Nuclear Structure and Astrophysics",
+    venue: "Carpathian Summer School of Physics 2025, 22 June \u2013 3 July \u00b7 Sinaia, Romania"
+  },
+  {
+    year: "2025",
+    type: "course",
+    label: "Teaching Assistant",
+    text: "Online certification course on \u201cNuclear Astrophysics\u201d \u2014 IIT Roorkee via <a href=\"https://nptel.ac.in/courses/115107130\" target=\"_blank\">NPTEL</a>"
+  },
+  {
+    year: "2024",
+    type: "oral",
+    label: "Oral Presentation",
+    text: "Measurements of absolute cross sections of \u00b9\u00b2C(p,p\u2019\u03b3)\u00b9\u00b2C and \u00b9\u2076O(p,p\u2019\u03b3)\u00b9\u2076O reactions",
+    venue: "68th DAE Symposium on Nuclear Physics, Dec 7\u201311, 2024 \u00b7 IIT Roorkee"
+  },
+  {
+    year: "2024",
+    type: "seminar",
+    label: "Session",
+    text: "Visualizations of radiation\u2013matter interaction using GEANT4 \u2014 Pre-symposium orientation program",
+    venue: "68th DAE Symposium on Nuclear Physics, 6 Dec 2024 \u00b7 IIT Roorkee, India"
+  },
+  {
+    year: "2024",
+    type: "seminar",
+    label: "Journal Club",
+    text: "Let there be oxygen: Deep Sea Polymetallic Nodules",
+    venue: "17 Aug 2024 \u00b7 Dept of Nuclear and Atomic Physics, TIFR, Mumbai"
+  },
+  {
+    year: "2023",
+    type: "oral",
+    label: "Oral Presentation",
+    text: "Absolute production cross-section of \u03b3-rays from \u00b9\u2070B(p,p\u2019\u03b3)\u00b9\u2070B reaction",
+    venue: "67th DAE Symposium on Nuclear Physics, Dec 9\u201313, 2023 \u00b7 IIT Indore"
+  },
+  {
+    year: "2022",
+    type: "oral",
+    label: "Oral Presentation",
+    text: "Measurements of absolute gamma-ray cross sections for \u00b9\u2076O(p, p\u2019\u03b3)\u00b9\u2076O reaction",
+    venue: "55th Zakopane Conference on Nuclear Physics, Aug 29 \u2013 Sept 4, 2022 \u00b7 Poland"
+  },
+  {
+    year: "2022",
+    type: "course",
+    label: "Teaching Assistant",
+    text: "Online certification course on \u201cNuclear Astrophysics\u201d \u2014 IIT Roorkee via <a href=\"https://nptel.ac.in/courses/115107130\" target=\"_blank\">NPTEL</a>"
+  },
+  {
+    year: "2021",
+    type: "course",
+    label: "Online Course",
+    text: "Machine Learning \u2014 Stanford University via <a href=\"https://coursera.org/share/9185d7280ed59d6dc1727702c4557238\" target=\"_blank\">Coursera \u00b7 View Certificate</a>"
+  },
+  {
+    year: "2021",
+    type: "seminar",
+    label: "Journal Club",
+    text: "From Pendulum to Nuclear Clock: An Overview",
+    venue: "18 Sept 2021 \u00b7 TIFR, Mumbai"
+  },
+  {
+    year: "2021",
+    type: "seminar",
+    label: "Journal Club",
+    text: "Nuclear Clock: The Thorium-229 low-energy isomer",
+    venue: "2 Oct 2021 \u00b7 TIFR, Mumbai"
+  },
+  {
+    year: "2020",
+    type: "seminar",
+    label: "Invited Seminar",
+    text: "Probing the Nucleus through Nucleon-Nucleus Scattering \u2014 One Day International Webinar on Physics, \u201cMystery of Nucleus\u201d",
+    venue: "2020 \u00b7 Manbhum Mahavidyalaya, Purulia, West Bengal"
+  },
+  {
+    year: "2019",
+    type: "award",
+    label: "\ud83c\udfc6 Best Poster Award",
+    text: "64th DAE-BRNS Symposium on Nuclear Physics \u2014 <a href=\"http://sympnp.org/proceedings/64/B33.pdf\" target=\"_blank\">View Abstract</a>",
+    venue: "2019 \u00b7 Dept of Physics, University of Lucknow"
+  },
+  {
+    year: "2019",
+    type: "seminar",
+    label: "Invited Talk",
+    text: "Advances in studies with CeBr\u2083 scintillation detectors",
+    venue: "National Conference on Promoting Advancement of Applied Sciences, 2019 \u00b7 H.N.B. Garhwal University, Tehri Garhwal, Uttarakhand"
+  },
+  {
+    year: "2019",
+    type: "attend",
+    label: "School",
+    text: "SERB School on \u201cNuclear Astrophysics\u201d",
+    venue: "Science and Engineering Research Board \u00b7 Saha Institute of Nuclear Physics, Kolkata"
+  },
+  {
+    year: "2018",
+    type: "attend",
+    label: "Workshop",
+    text: "Improving Awareness about Plagiarism",
+    venue: "Indian Institute of Technology Roorkee, Uttarakhand"
+  },
+  {
+    year: "2017",
+    type: "poster",
+    label: "Poster",
+    text: "Studies on the effect of coincidence time window on intrinsic energy resolution of NaI(Tl) detector \u2014 <a href=\"http://sympnp.org/proceedings/62/G59.pdf\" target=\"_blank\">View Abstract</a>",
+    venue: "62nd DAE-BRNS Symposium on Nuclear Physics, 2017 \u00b7 Thapar University, Patiala, Punjab"
+  },
+  {
+    year: "2017",
+    type: "attend",
+    label: "Conference",
+    text: "22nd National Conference on Radiation Awareness and Detection in Natural Environment \u2014 RADNET-II",
+    venue: "Gurukul Kangri Vishwavidhyalaya, Haridwar, Uttarakhand"
+  },
+  {
+    year: "2017",
+    type: "attend",
+    label: "Workshop",
+    text: "IEEE EDS Short Course on \u201cRadiation Effects in Semiconductor Devices: Physics, Modeling and Mitigation\u201d",
+    venue: "Indian Institute of Technology Roorkee, Uttarakhand"
+  },
+  {
+    year: "2014",
+    type: "other",
+    label: "Research Project",
+    text: "Solar and Reactor Neutrino Oscillation in Two and Three Neutrino Mixing Formalism \u2014 supervised by Dr D P Roy",
+    venue: "NIUS, HBCSE, TIFR, Mumbai"
+  },
+  {
+    year: "2013",
+    type: "other",
+    label: "Summer Internship",
+    text: "National Initiative on Undergraduate Science (NIUS)",
+    venue: "Homi Bhabha Center for Science Education (HBCSE), TIFR, Mumbai"
+  }
+];
+
+const EXTRACURRICULAR = [
+  {
+    year: "2024",
+    type: "other",
+    label: "Organising Committee",
+    text: "Local Organizing Body \u2014 68th DAE Symposium on Nuclear Physics",
+    venue: "Dec 7\u201311, 2024 \u00b7 IIT Roorkee, Uttarakhand, India"
+  },
+  {
+    year: "2020",
+    type: "other",
+    label: "Outreach",
+    text: "Part of organising committee for Science Exhibition on National Science Day \u2014 in collaboration with OSA Roorkee Chapter, IPA Roorkee Chapter, Physics & Astronomy Club, and SOPAN, for students of Govt Primary School, Belda. <a href=\"https://fb.watch/bBPRILI-5X/\" target=\"_blank\">Facebook Post</a>",
+    venue: "IIT Roorkee, Uttarakhand"
+  },
+  {
+    year: "2020",
+    type: "other",
+    label: "Lecture Series",
+    text: "Helped organise \u201cInstitute Lecture Series \u2013 Mysteries of the Universe\u201d (ILS-MOU) \u2014 <a href=\"https://youtu.be/TwayPGEXx1E\" target=\"_blank\">View Playlist</a>"
+  },
+  {
+    year: "2019",
+    type: "other",
+    label: "Workshop",
+    text: "Helped organise the workshop on \u201cIntroduction to Research\u201d",
+    venue: "12 October 2019 \u00b7 IIT Roorkee, Uttarakhand"
+  },
+  {
+    year: "2019\u20132020",
+    type: "other",
+    label: "Leadership",
+    text: "Joint Secretary \u2014 Indian Physics Association, Roorkee Chapter"
+  },
+  {
+    year: "2018\u20132020",
+    type: "other",
+    label: "Lecture Series",
+    text: "Helped organise Institute Lecture Series (ILS) lectures \u2014 <a href=\"https://www.youtube.com/channel/UC7Q5GsjOpPTf8PxT6uDjRcg\" target=\"_blank\">YouTube Channel</a>"
+  },
+  {
+    year: "2013\u20132014",
+    type: "other",
+    label: "Leadership",
+    text: "Joint Secretary \u2014 Physics Department, Hansraj College, University of Delhi"
+  },
+  {
+    year: "2012\u20132013",
+    type: "other",
+    label: "Editorial",
+    text: "Member of the Editorial Board for the Physics Department\u2019s annual magazine",
+    venue: "Hansraj College, University of Delhi"
+  }
+];
+
+const MEMBERSHIPS = [
+  { name: "Indian Physics Association", role: "Life Member" }
+];
+
+// ============================================================
+//  RENDERER — no need to edit below this line
+// ============================================================
+
+function sortYear(y) {
+  // extract first 4-digit year for sorting
+  return -(parseInt(y.match(/\d{4}/)?.[0] ?? "0"));
+}
+
+function groupByYear(entries) {
+  const map = new Map();
+  for (const e of entries) {
+    if (!map.has(e.year)) map.set(e.year, []);
+    map.get(e.year).push(e);
+  }
+  // sort descending
+  return new Map([...map.entries()].sort((a, b) => sortYear(a[0]) - sortYear(b[0])));
+}
+
+function buildTimeline(entries, panelId) {
+  const grouped = groupByYear(entries);
+  const tl = document.createElement('div');
+  tl.className = 'timeline';
+
+  grouped.forEach((items, year) => {
+    const slug = year.replace(/[^a-z0-9]/gi, '-');
+    const group = document.createElement('div');
+    group.className = 'year-group';
+    group.id = `${panelId}-yr-${slug}`;
+
+    const heading = document.createElement('div');
+    heading.className = 'year-heading';
+    heading.innerHTML = `<div class="year-node"></div><span class="year-label">${year}</span><div class="year-divider"></div>`;
+    group.appendChild(heading);
+
+    for (const e of items) {
+      const card = document.createElement('div');
+      card.className = 'event-card';
+      card.innerHTML = `
+        <span class="event-type type-${e.type}">${e.label}</span>
+        <p class="event-text">${e.text}</p>
+        ${e.venue ? `<p class="event-venue">${e.venue}</p>` : ''}
+      `;
+      group.appendChild(card);
+    }
+    tl.appendChild(group);
+  });
+  return tl;
+}
+
+function buildMemberships() {
+  const wrap = document.createElement('div');
+  wrap.style.paddingTop = '1rem';
+  wrap.innerHTML = `<p style="font-family:'Lora',serif;font-style:italic;color:var(--text-muted);margin-bottom:1.5rem;font-size:0.95rem;">Professional affiliations and society memberships.</p>`;
+  const grid = document.createElement('div');
+  grid.className = 'membership-grid';
+  for (const m of MEMBERSHIPS) {
+    grid.innerHTML += `<div class="membership-pill"><div style="font-weight:600;margin-bottom:0.3rem;">${m.name}</div><div style="font-size:0.75rem;opacity:0.75;letter-spacing:0.08em;">${m.role}</div></div>`;
+  }
+  wrap.appendChild(grid);
+  return wrap;
+}
+
+function buildYearNav(panelId) {
+  const nav = document.getElementById('year-nav');
+  nav.innerHTML = '<p class="year-nav-label">Jump to year</p>';
+  const panel = document.getElementById('panel-' + panelId);
+  if (!panel) return;
+  panel.querySelectorAll('.year-group[id]').forEach(g => {
+    const yr = g.querySelector('.year-label').textContent;
+    const a = document.createElement('a');
+    a.href = '#' + g.id;
+    a.className = 'year-link';
+    a.textContent = yr;
+    nav.appendChild(a);
+  });
+}
+
+// Build panels
+const panelsEl = document.getElementById('panels');
+
+function makePanel(id, content) {
+  const div = document.createElement('div');
+  div.className = 'section-panel';
+  div.id = 'panel-' + id;
+  div.appendChild(content);
+  panelsEl.appendChild(div);
+}
+
+makePanel('academic', buildTimeline(ACADEMIC, 'academic'));
+makePanel('extracurricular', buildTimeline(EXTRACURRICULAR, 'extracurricular'));
+makePanel('memberships', buildMemberships());
+
+// Set counts
+document.getElementById('count-academic').textContent = ACADEMIC.length;
+document.getElementById('count-extracurricular').textContent = EXTRACURRICULAR.length;
+document.getElementById('count-memberships').textContent = MEMBERSHIPS.length;
+
+// Stats
+const allYears = new Set([...ACADEMIC, ...EXTRACURRICULAR].map(e => e.year.match(/\d{4}/)?.[0]).filter(Boolean));
+document.getElementById('stat-years').textContent = allYears.size + '+';
+const presentations = ACADEMIC.filter(e => ['oral','poster','seminar'].includes(e.type)).length;
+document.getElementById('stat-presentations').textContent = presentations + '+';
+
+// Tabs
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const panel = document.getElementById('panel-' + btn.dataset.tab);
+    if (panel) panel.classList.add('active');
+    buildYearNav(btn.dataset.tab);
+  });
+});
+
+// Activate first tab
+document.getElementById('panel-academic').classList.add('active');
+buildYearNav('academic');
+
+// Scroll spy
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      document.querySelectorAll('.year-link').forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id);
+      });
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+
+document.querySelectorAll('.year-group[id]').forEach(g => observer.observe(g));
+
+// Particle background
+(function() {
+  const canvas = document.getElementById('particle-bg');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  function rand(a, b) { return a + Math.random() * (b - a); }
+
+  class Particle {
+    constructor() { this.reset(); }
+    reset() { this.x=rand(0,W); this.y=rand(0,H); this.vx=rand(-0.4,0.4); this.vy=rand(-0.8,-0.2); this.alpha=rand(0.2,0.6); this.radius=rand(1,2.5); this.color=Math.random()>0.6?'#C8923A':'#3D7A7A'; this.decay=rand(0.002,0.006); }
+    update() { this.x+=this.vx; this.y+=this.vy; this.alpha-=this.decay; if(this.alpha<=0)this.reset(); }
+    draw() { ctx.save(); ctx.globalAlpha=this.alpha; ctx.fillStyle=this.color; ctx.beginPath(); ctx.arc(this.x,this.y,this.radius,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+  }
+  class Track {
+    constructor() { this.reset(); }
+    reset() { this.x=rand(0,W); this.y=rand(H*0.1,H*0.9); this.length=rand(40,120); this.angle=rand(-0.3,0.3); this.alpha=rand(0.05,0.2); this.color=Math.random()>0.5?'#C8923A':'#2D4A7A'; this.speed=rand(0.5,2); this.progress=0; }
+    update() { this.progress+=this.speed; if(this.progress>this.length+60)this.reset(); }
+    draw() { const d=Math.min(this.progress,this.length); ctx.save(); ctx.globalAlpha=this.alpha*Math.min(1,d/20)*Math.max(0,1-(this.progress-this.length)/60); ctx.strokeStyle=this.color; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(this.x,this.y); ctx.lineTo(this.x+Math.cos(this.angle)*d,this.y+Math.sin(this.angle)*d); ctx.stroke(); ctx.restore(); }
+  }
+
+  const particles = Array.from({length:60}, () => new Particle());
+  const tracks = Array.from({length:20}, () => new Track());
+  function loop() { ctx.clearRect(0,0,W,H); tracks.forEach(t=>{t.update();t.draw();}); particles.forEach(p=>{p.update();p.draw();}); requestAnimationFrame(loop); }
+  loop();
+})();
+</script>
+</body>
+</html>
