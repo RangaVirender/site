@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gamow Window Calculator</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #05081a;
+    --bg2: #0a0f2e;
+    --card: rgba(255,255,255,0.05);
+    --card-border: rgba(255,255,255,0.1);
+    --gold: #f0a500;
+    --gold-dim: rgba(240,165,0,0.15);
+    --blue: #4ab4f5;
+    --green: #4af5a5;
+    --red: #f5614a;
+    --text: #e8eaf6;
+    --muted: #8090b0;
+    --radius: 16px;
+    --glow: 0 0 32px rgba(240,165,0,0.18);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Starfield ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 25% 65%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 40% 10%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 55% 80%, rgba(255,255,255,0.35) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 35%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 85% 55%, rgba(255,255,255,0.45) 0%, transparent 100%),
+      radial-gradient(1px 1px at 92% 15%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 15% 90%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 50%, rgba(255,255,255,0.25) 0%, transparent 100%),
+      radial-gradient(2px 2px at 78% 8%, rgba(240,165,0,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 33% 42%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 48% 95%, rgba(255,255,255,0.35) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Nebula gradient bg ── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 30%, rgba(30,50,120,0.4) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 60% at 80% 70%, rgba(80,20,100,0.3) 0%, transparent 70%),
+      radial-gradient(ellipse 70% 40% at 50% 100%, rgba(10,30,80,0.5) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+  }
+
+  /* ── Header ── */
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--gold-dim);
+    border: 1px solid rgba(240,165,0,0.3);
+    border-radius: 99px;
+    padding: 4px 14px;
+    font-size: 12px;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .header-badge svg { flex-shrink: 0; }
+  h1 {
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff 0%, var(--gold) 60%, #f06060 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.15;
+    margin-bottom: 10px;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.95rem;
+    max-width: 560px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 24px;
+  }
+  .card-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--card-border);
+  }
+
+  /* ── Main grid ── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .main-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── Left column ── */
+  .left-col { display: flex; flex-direction: column; gap: 16px; }
+
+  /* Preset select */
+  .preset-wrap { position: relative; }
+  select {
+    width: 100%;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    appearance: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  select:focus { outline: none; border-color: var(--gold); }
+  .preset-arrow {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--muted);
+    font-size: 0.7rem;
+  }
+
+  /* Particle inputs */
+  .particle-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .particle-block {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .particle-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .field { margin-bottom: 10px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+    letter-spacing: 0.04em;
+  }
+  .field input[type="number"] {
+    width: 100%;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 8px 10px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .field input[type="number"]:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(240,165,0,0.12);
+  }
+  /* hide spinners */
+  .field input[type="number"]::-webkit-inner-spin-button { opacity: 0.4; }
+
+  /* Temperature slider */
+  .temp-section { }
+  .temp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .temp-header label { font-size: 0.72rem; color: var(--muted); }
+  .temp-display {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+  .temp-sublabel {
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  input[type="range"] {
+    width: 100%;
+    height: 4px;
+    margin-top: 10px;
+    accent-color: var(--gold);
+    cursor: pointer;
+    background: linear-gradient(to right, var(--gold) var(--pct, 0%), rgba(255,255,255,0.1) var(--pct, 0%));
+    border-radius: 99px;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 10px rgba(240,165,0,0.6);
+    cursor: pointer;
+    border: 2px solid #fff;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 10px rgba(240,165,0,0.6);
+    cursor: pointer;
+    border: 2px solid #fff;
+  }
+  .temp-ticks {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+  }
+  .temp-ticks span { font-size: 0.6rem; color: var(--muted); }
+
+  /* ── Results grid ── */
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 0;
+  }
+  @media (max-width: 400px) { .results-grid { grid-template-columns: 1fr; } }
+  .result-box {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .result-box.highlight { border-color: rgba(240,165,0,0.4); }
+  .result-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-clr, var(--gold)), transparent);
+    opacity: 0.7;
+  }
+  .result-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .result-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--accent-clr, var(--gold));
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+  .result-unit {
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-weight: 400;
+    margin-left: 2px;
+  }
+  .result-sub {
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* stellar class badge */
+  .stellar-badge {
+    grid-column: 1 / -1;
+    background: var(--gold-dim);
+    border: 1px solid rgba(240,165,0,0.25);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .stellar-icon { font-size: 1.5rem; }
+  .stellar-name { font-size: 0.9rem; font-weight: 600; color: var(--gold); }
+  .stellar-desc { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+  /* ── Right column ── */
+  .right-col { display: flex; flex-direction: column; gap: 16px; }
+
+  /* Chart card */
+  .chart-card { }
+  .chart-wrap {
+    position: relative;
+    height: 320px;
+  }
+
+  /* Formula card */
+  .formula-card { }
+  .formula-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  @media (max-width: 600px) { .formula-grid { grid-template-columns: 1fr; } }
+  .formula-item {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 0.8rem;
+  }
+  .formula-item .f-label { color: var(--muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .formula-item .f-eq {
+    font-family: 'Courier New', monospace;
+    color: var(--text);
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+  .formula-item .f-eq .hl { color: var(--gold); }
+
+  /* Legend row */
+  .legend-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    justify-content: center;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .legend-dot {
+    width: 12px; height: 3px;
+    border-radius: 2px;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+
+  /* footer */
+  footer {
+    text-align: center;
+    margin-top: 40px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    opacity: 0.7;
+    line-height: 1.6;
+  }
+
+  /* animation */
+  @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  .card { animation: fadeIn 0.5s ease both; }
+  .left-col .card:nth-child(2) { animation-delay: 0.06s; }
+  .left-col .card:nth-child(3) { animation-delay: 0.12s; }
+  .right-col .card:nth-child(1) { animation-delay: 0.08s; }
+  .right-col .card:nth-child(2) { animation-delay: 0.16s; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <h1>Gamow Window Calculator</h1>
+    <p class="subtitle">
+      Compute the energy range where stellar fusion reactions are most probable —
+      the overlap of quantum tunneling and thermal Maxwell-Boltzmann distributions.
+    </p>
+  </header>
+
+  <div class="main-grid">
+
+    <!-- ══ LEFT COLUMN ══ -->
+    <div class="left-col">
+
+      <!-- Presets -->
+      <div class="card">
+        <div class="card-title">Preset Reactions</div>
+        <div class="preset-wrap">
+          <select id="preset" onchange="loadPreset()">
+            <option value="">── Custom ──</option>
+            <option value="pp">p + p  (pp-chain, main sequence)</option>
+            <option value="pd">p + d  (pp-chain step II)</option>
+            <option value="pC12">p + ¹²C  (CNO cycle)</option>
+            <option value="pN14">p + ¹⁴N  (CNO bottleneck)</option>
+            <option value="pO16">p + ¹⁶O  (CNO cycle)</option>
+            <option value="HeHe">⁴He + ⁴He  (triple-alpha)</option>
+            <option value="CC">¹²C + ¹²C  (carbon burning)</option>
+            <option value="OO">¹⁶O + ¹⁶O  (oxygen burning)</option>
+          </select>
+          <span class="preset-arrow">▾</span>
+        </div>
+      </div>
+
+      <!-- Particle inputs -->
+      <div class="card">
+        <div class="card-title">Reacting Nuclei</div>
+        <div class="particle-row">
+          <div class="particle-block">
+            <div class="particle-label">Particle 1</div>
+            <div class="field">
+              <label>Charge Z₁</label>
+              <input type="number" id="Z1" value="1" min="1" max="92" step="1" oninput="update()">
+            </div>
+            <div class="field">
+              <label>Mass A₁ (amu)</label>
+              <input type="number" id="A1" value="1" min="1" max="250" step="1" oninput="update()">
+            </div>
+          </div>
+          <div class="particle-block">
+            <div class="particle-label">Particle 2</div>
+            <div class="field">
+              <label>Charge Z₂</label>
+              <input type="number" id="Z2" value="1" min="1" max="92" step="1" oninput="update()">
+            </div>
+            <div class="field">
+              <label>Mass A₂ (amu)</label>
+              <input type="number" id="A2" value="1" min="1" max="250" step="1" oninput="update()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Temperature -->
+      <div class="card">
+        <div class="card-title">Stellar Temperature</div>
+        <div class="temp-section">
+          <div class="temp-header">
+            <label>Log₁₀ T (K)</label>
+            <div>
+              <span class="temp-display" id="tempDisplay">1.50 × 10⁷ K</span>
+              <div class="temp-sublabel" id="tempSub">kT = 1.29 keV</div>
+            </div>
+          </div>
+          <input type="range" id="tempSlider" min="6" max="10" step="0.01" value="7.176"
+                 oninput="onTempSlider()">
+          <div class="temp-ticks">
+            <span>10⁶ K</span><span>10⁷ K</span><span>10⁸ K</span><span>10⁹ K</span><span>10¹⁰ K</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="card">
+        <div class="card-title">Results</div>
+        <div class="results-grid">
+          <div class="result-box highlight" style="--accent-clr: var(--gold)">
+            <div class="result-label">Gamow Peak E₀</div>
+            <div class="result-value" id="resE0">—<span class="result-unit">keV</span></div>
+            <div class="result-sub" id="resE0MeV">— MeV</div>
+          </div>
+          <div class="result-box" style="--accent-clr: var(--blue)">
+            <div class="result-label">Window Width ΔE</div>
+            <div class="result-value" id="resDelta">—<span class="result-unit">keV</span></div>
+            <div class="result-sub" id="resDeltaSub">FWHM ≈ — keV</div>
+          </div>
+          <div class="result-box" style="--accent-clr: var(--green)">
+            <div class="result-label">Thermal Energy kT</div>
+            <div class="result-value" id="resKT">—<span class="result-unit">keV</span></div>
+            <div class="result-sub" id="resRatio">E₀ / kT = —</div>
+          </div>
+          <div class="result-box" style="--accent-clr: var(--red)">
+            <div class="result-label">Sommerfeld η</div>
+            <div class="result-value" id="resSomm">—</div>
+            <div class="result-sub">at E = E₀</div>
+          </div>
+          <div class="stellar-badge">
+            <div class="stellar-icon" id="stellarIcon">⭐</div>
+            <div>
+              <div class="stellar-name" id="stellarName">Main Sequence</div>
+              <div class="stellar-desc" id="stellarDesc">Solar core conditions</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RIGHT COLUMN ══ -->
+    <div class="right-col">
+
+      <!-- Chart -->
+      <div class="card chart-card">
+        <div class="card-title">Gamow Window Visualization</div>
+        <div class="chart-wrap">
+          <canvas id="gamowChart"></canvas>
+        </div>
+        <div class="legend-row">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#4ab4f5"></div>
+            Maxwell-Boltzmann tail
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#f5614a"></div>
+            Tunneling probability
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#f0a500"></div>
+            Gamow window (product)
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulas -->
+      <div class="card formula-card">
+        <div class="card-title">Key Formulae</div>
+        <div class="formula-grid">
+          <div class="formula-item">
+            <div class="f-label">Gamow Peak</div>
+            <div class="f-eq">
+              <span class="hl">E₀</span> = 1.2204<br>
+              × (Z₁²Z₂² Aᵣ T₆²)^<span class="hl">1/3</span><br>
+              <span style="color:var(--muted);font-size:0.7rem">[keV]</span>
+            </div>
+          </div>
+          <div class="formula-item">
+            <div class="f-label">Window Width</div>
+            <div class="f-eq">
+              <span class="hl">ΔE</span> = (4/√3)<br>
+              × √(<span class="hl">E₀</span> · kT)<br>
+              <span style="color:var(--muted);font-size:0.7rem">[keV]</span>
+            </div>
+          </div>
+          <div class="formula-item">
+            <div class="f-label">Gamow Integrand</div>
+            <div class="f-eq">
+              f(E) ∝ exp(<br>
+              −E/<span class="hl">kT</span> − <span class="hl">b</span>/√E<br>
+              )
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:12px; padding:12px; background:rgba(0,0,0,0.2); border-radius:10px; font-size:0.75rem; color:var(--muted); line-height:1.7">
+          Aᵣ = A₁A₂/(A₁+A₂)  ·  T₆ = T / 10⁶ K  ·  kT [keV] = 8.617×10⁻⁸ × T  ·  b [MeV^½] = 0.9897 Z₁Z₂√Aᵣ
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    Formulae from Iliadis, <em>Nuclear Physics of Stars</em> (Wiley-VCH) &nbsp;·&nbsp;
+    S-factor assumed constant (non-resonant reactions)<br><br>
+    <strong style="font-size:1rem; color:var(--gold); letter-spacing:0.08em;">VR</strong>
+    &nbsp;·&nbsp;
+    <a href="https://www.vranga.in" target="_blank" rel="noopener"
+       style="color:var(--gold); text-decoration:none; border-bottom:1px solid rgba(240,165,0,0.4);">
+      www.vranga.in
+    </a>
+  </footer>
+
+</div>
+
+<script>
+// ── Physics ──────────────────────────────────────────────────────────────────
+const kB_keV_per_K = 8.6173e-8; // keV/K
+
+function computeGamow(Z1, A1, Z2, A2, T) {
+  const Ar = (A1 * A2) / (A1 + A2);
+  const T6 = T / 1e6;
+  const kT_keV = kB_keV_per_K * T;
+
+  // Gamow peak energy [keV]
+  const E0_keV = 1.2204 * Math.pow(Z1 * Z1 * Z2 * Z2 * Ar * T6 * T6, 1 / 3);
+
+  // Width (1/e full-width of Gaussian approx) [keV]
+  const dE_keV = (4 / Math.sqrt(3)) * Math.sqrt(E0_keV * kT_keV);
+
+  // b parameter [keV^(1/2)] — Gamow factor exponent coefficient
+  // b [MeV^(1/2)] = 0.9897 * Z1 * Z2 * sqrt(Ar)
+  // convert to keV^(1/2): multiply by sqrt(1000)
+  const b_MeV = 0.9897 * Z1 * Z2 * Math.sqrt(Ar);
+  const b_keV = b_MeV * Math.sqrt(1000);
+
+  // Sommerfeld parameter at E0
+  const eta = b_keV / (2 * Math.sqrt(E0_keV));
+
+  return { E0_keV, dE_keV, kT_keV, b_keV, eta, Ar, T6 };
+}
+
+function buildCurves(params, nPoints = 400) {
+  const { E0_keV, dE_keV, kT_keV, b_keV } = params;
+
+  // Plot range: from near zero to E0 + 4*dE
+  const Emin = E0_keV * 0.01;
+  const Emax = E0_keV + 4 * dE_keV;
+  const step = (Emax - Emin) / (nPoints - 1);
+
+  const energies = [], mb = [], tunnel = [], gamow = [];
+
+  for (let i = 0; i < nPoints; i++) {
+    const E = Emin + i * step;
+    energies.push(E);
+    const f_mb = Math.exp(-E / kT_keV);
+    const f_tun = Math.exp(-b_keV / Math.sqrt(E));
+    const f_gam = f_mb * f_tun;
+    mb.push(f_mb);
+    tunnel.push(f_tun);
+    gamow.push(f_gam);
+  }
+
+  // Normalize each to peak = 1
+  const normalize = arr => {
+    const mx = Math.max(...arr);
+    return arr.map(v => v / mx);
+  };
+
+  return {
+    energies,
+    mb: normalize(mb),
+    tunnel: normalize(tunnel),
+    gamow: normalize(gamow),
+  };
+}
+
+// ── Presets ──────────────────────────────────────────────────────────────────
+const PRESETS = {
+  pp:    { Z1:1, A1:1,  Z2:1,  A2:1,  T:1.5e7, label:'p+p' },
+  pd:    { Z1:1, A1:1,  Z2:1,  A2:2,  T:1.5e7, label:'p+d' },
+  pC12:  { Z1:1, A1:1,  Z2:6,  A2:12, T:2.0e7, label:'p+¹²C' },
+  pN14:  { Z1:1, A1:1,  Z2:7,  A2:14, T:2.0e7, label:'p+¹⁴N' },
+  pO16:  { Z1:1, A1:1,  Z2:8,  A2:16, T:2.5e7, label:'p+¹⁶O' },
+  HeHe:  { Z1:2, A1:4,  Z2:2,  A2:4,  T:1.5e8, label:'⁴He+⁴He' },
+  CC:    { Z1:6, A1:12, Z2:6,  A2:12, T:5.0e8, label:'¹²C+¹²C' },
+  OO:    { Z1:8, A1:16, Z2:8,  A2:16, T:2.0e9, label:'¹⁶O+¹⁶O' },
+};
+
+// Stellar environment classification
+function classifyTemp(T) {
+  if (T < 5e6)  return { icon:'🌟', name:'Pre-main Sequence',   desc:'Star still contracting — fusion not yet ignited' };
+  if (T < 3e7)  return { icon:'☀️', name:'Main Sequence Core',  desc:'Hydrogen burning via pp-chain or CNO cycle' };
+  if (T < 2e8)  return { icon:'🔴', name:'Red Giant / Subgiant', desc:'Helium burning begins (triple-alpha)' };
+  if (T < 1e9)  return { icon:'🌀', name:'Horizontal Branch',   desc:'Stable core He-burning' };
+  if (T < 4e9)  return { icon:'💥', name:'Core Collapse / AGB', desc:'C/O burning in massive stars or AGB phase' };
+  return        { icon:'🌌', name:'Supernova / NS merger',       desc:'r-process / explosive nucleosynthesis' };
+}
+
+// ── Chart setup ──────────────────────────────────────────────────────────────
+let chart = null;
+
+function initChart() {
+  const ctx = document.getElementById('gamowChart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        {
+          label: 'Maxwell-Boltzmann',
+          data: [],
+          borderColor: '#4ab4f5',
+          backgroundColor: 'rgba(74,180,245,0.06)',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.3,
+        },
+        {
+          label: 'Tunneling',
+          data: [],
+          borderColor: '#f5614a',
+          backgroundColor: 'rgba(245,97,74,0.06)',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.3,
+        },
+        {
+          label: 'Gamow Window',
+          data: [],
+          borderColor: '#f0a500',
+          backgroundColor: 'rgba(240,165,0,0.12)',
+          borderWidth: 3,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.3,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(10,15,45,0.92)',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+          titleColor: '#f0a500',
+          bodyColor: '#ccd3e8',
+          callbacks: {
+            title: items => `E = ${parseFloat(items[0].label).toFixed(2)} keV`,
+            label: item => ` ${item.dataset.label}: ${item.parsed.y.toFixed(3)}`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          title: { display: true, text: 'Energy (keV)', color: '#8090b0', font: { size: 12 } },
+          ticks: { color: '#8090b0', maxTicksLimit: 8, callback: v => v.toFixed(1) },
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          border: { color: 'rgba(255,255,255,0.1)' },
+        },
+        y: {
+          min: 0, max: 1.05,
+          title: { display: true, text: 'Relative Probability (normalized)', color: '#8090b0', font: { size: 12 } },
+          ticks: { color: '#8090b0', maxTicksLimit: 6 },
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          border: { color: 'rgba(255,255,255,0.1)' },
+        },
+      },
+      animation: { duration: 400, easing: 'easeInOutQuart' },
+    },
+  });
+}
+
+// ── Format helpers ────────────────────────────────────────────────────────────
+function fmtKeV(v) {
+  if (v >= 1000) return (v / 1000).toFixed(3) + ' MeV';
+  if (v >= 10)   return v.toFixed(2);
+  return v.toFixed(3);
+}
+
+function fmtT(T) {
+  const exp = Math.floor(Math.log10(T));
+  const man = T / Math.pow(10, exp);
+  const sups = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻' };
+  const supStr = String(exp).split('').map(c => sups[c] || c).join('');
+  return `${man.toFixed(2)} × 10${supStr} K`;
+}
+
+// ── Main update ───────────────────────────────────────────────────────────────
+let currentT = 1.5e7;
+
+function update() {
+  const Z1 = parseFloat(document.getElementById('Z1').value) || 1;
+  const A1 = parseFloat(document.getElementById('A1').value) || 1;
+  const Z2 = parseFloat(document.getElementById('Z2').value) || 1;
+  const A2 = parseFloat(document.getElementById('A2').value) || 1;
+  const T  = currentT;
+
+  if (Z1 < 1 || Z2 < 1 || A1 < 1 || A2 < 1) return;
+
+  const p = computeGamow(Z1, A1, Z2, A2, T);
+  const curves = buildCurves(p);
+
+  // Update results
+  document.getElementById('resE0').innerHTML    = `${fmtKeV(p.E0_keV)}<span class="result-unit">keV</span>`;
+  document.getElementById('resE0MeV').textContent = `${(p.E0_keV/1000).toFixed(4)} MeV`;
+  document.getElementById('resDelta').innerHTML  = `${fmtKeV(p.dE_keV)}<span class="result-unit">keV</span>`;
+  document.getElementById('resDeltaSub').textContent = `FWHM ≈ ${(p.dE_keV * 0.8326).toFixed(2)} keV`;
+  document.getElementById('resKT').innerHTML     = `${p.kT_keV.toFixed(3)}<span class="result-unit">keV</span>`;
+  document.getElementById('resRatio').textContent = `E₀ / kT = ${(p.E0_keV / p.kT_keV).toFixed(2)}`;
+  document.getElementById('resSomm').textContent  = p.eta.toFixed(2);
+
+  // Stellar class
+  const cls = classifyTemp(T);
+  document.getElementById('stellarIcon').textContent = cls.icon;
+  document.getElementById('stellarName').textContent = cls.name;
+  document.getElementById('stellarDesc').textContent = cls.desc;
+
+  // Update chart
+  chart.data.labels = curves.energies;
+  chart.data.datasets[0].data = curves.energies.map((e, i) => ({ x: e, y: curves.mb[i] }));
+  chart.data.datasets[1].data = curves.energies.map((e, i) => ({ x: e, y: curves.tunnel[i] }));
+  chart.data.datasets[2].data = curves.energies.map((e, i) => ({ x: e, y: curves.gamow[i] }));
+  chart.options.scales.x.min = curves.energies[0];
+  chart.options.scales.x.max = curves.energies[curves.energies.length - 1];
+  chart.update('active');
+}
+
+function onTempSlider() {
+  const slider = document.getElementById('tempSlider');
+  const logT = parseFloat(slider.value);
+  currentT = Math.pow(10, logT);
+
+  // Update gradient fill
+  const pct = ((logT - 6) / 4) * 100;
+  slider.style.setProperty('--pct', pct + '%');
+
+  document.getElementById('tempDisplay').textContent = fmtT(currentT);
+  document.getElementById('tempSub').textContent = `kT = ${(kB_keV_per_K * currentT).toFixed(3)} keV`;
+  update();
+}
+
+function loadPreset() {
+  const key = document.getElementById('preset').value;
+  if (!key) return;
+  const p = PRESETS[key];
+  document.getElementById('Z1').value = p.Z1;
+  document.getElementById('A1').value = p.A1;
+  document.getElementById('Z2').value = p.Z2;
+  document.getElementById('A2').value = p.A2;
+
+  // Set slider to match preset T
+  const logT = Math.log10(p.T);
+  const slider = document.getElementById('tempSlider');
+  slider.value = logT;
+  currentT = p.T;
+  const pct = ((logT - 6) / 4) * 100;
+  slider.style.setProperty('--pct', pct + '%');
+  document.getElementById('tempDisplay').textContent = fmtT(currentT);
+  document.getElementById('tempSub').textContent = `kT = ${(kB_keV_per_K * currentT).toFixed(3)} keV`;
+  update();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+initChart();
+onTempSlider(); // trigger first render with default values
+</script>
+</body>
+</html>
