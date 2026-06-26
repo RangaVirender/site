@@ -259,117 +259,86 @@
     <p class="hero-sub">Calculators, visualisations, and tools for nuclear reaction physics and detector science.</p>
   </div>
 
-  <!-- CALCULATORS -->
-  <section>
-    <div class="section-header">
-      <div class="section-icon teal">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="4" y="2" width="16" height="20" rx="2"/>
-          <path d="M8 7h8M8 11h8M8 15h5"/>
-        </svg>
-      </div>
-      <span class="section-title">Calculators</span>
-    </div>
-    <div class="grid">
-      <a class="card teal" href="https://skisickness.com/2020/02/kinematics/" target="_blank" rel="noopener">
-        <span class="card-dot"></span>
-        <div class="card-text">
-          <div class="card-name">Two-body Kinematics</div>
-          <div class="card-url">skisickness.com</div>
-        </div>
-      </a>
-      <a class="card teal" href="https://rangavirender.github.io/site/cross-section-calculator.html" target="_blank" rel="noopener">
-        <span class="card-dot"></span>
-        <div class="card-text">
-          <div class="card-name">Cross-section Calculator</div>
-          <div class="card-url">rangavirender.github.io</div>
-        </div>
-      </a>
-      <a class="card teal" href="https://rangavirender.github.io/site/gamow-window-calculator.html" target="_blank" rel="noopener">
-        <span class="card-dot"></span>
-        <div class="card-text">
-          <div class="card-name">Gamow-window Calculator</div>
-          <div class="card-url">rangavirender.github.io</div>
-        </div>
-      </a>
-      <a class="card teal" href="http://nrv.jinr.ru/nrv/" target="_blank" rel="noopener">
-        <span class="card-dot"></span>
-        <div class="card-text">
-          <div class="card-name">NRV Browser</div>
-          <div class="card-url">nrv.jinr.ru</div>
-        </div>
-      </a>
-      <a class="card teal" href="https://rangavirender.github.io/site/coulomb_barrier_calculator.html" target="_blank" rel="noopener">
-        <span class="card-dot"></span>
-        <div class="card-text">
-          <div class="card-name">Coulomb Barrier Calculator</div>
-          <div class="card-url">rangavirender.github.io</div>
-        </div>
-      </a>
-      <a class="card teal" href="http://nrv.jinr.ru/nrv/mobilenrv/kinematics/Kinematics2Body.html" target="_blank" rel="noopener">
-        <span class="card-dot"></span>
-        <div class="card-text">
-          <div class="card-name">Two-body Kinematics NRV</div>
-          <div class="card-url">nrv.jinr.ru</div>
-        </div>
-      </a>
-      <a class="card teal" href="https://rangavirender.github.io/site/com_lab_converter.html" target="_blank" rel="noopener">
-        <span class="card-dot"></span>
-        <div class="card-text">
-          <div class="card-name">Lab Energy → CM Energy</div>
-          <div class="card-url">rangavirender.github.io</div>
-        </div>
-      </a>
-    </div>
-  </section>
-
-  <!-- ANIMATIONS -->
-  <section>
-    <div class="section-header">
-      <div class="section-icon orange">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
-        </svg>
-      </div>
-      <span class="section-title">Animations &amp; Visualisations</span>
-    </div>
-    <div class="grid">
-      <a class="card orange" href="https://rangavirender.github.io/site/nuclear-reaction-animation.html" target="_blank" rel="noopener">
-        <span class="card-dot"></span>
-        <div class="card-text">
-          <div class="card-name">Nuclear Reaction Animation</div>
-          <div class="card-url">rangavirender.github.io</div>
-        </div>
-      </a>
-      <a class="card orange" href="https://rangavirender.github.io/site/nucleus_image_generator.html" target="_blank" rel="noopener">
-        <span class="card-dot"></span>
-        <div class="card-text">
-          <div class="card-name">Nucleus Image Generator</div>
-          <div class="card-url">rangavirender.github.io</div>
-        </div>
-      </a>
-      <a class="card orange" href="https://rangavirender.github.io/site/scintillation_detector_animation.html" target="_blank" rel="noopener">
-        <span class="card-dot"></span>
-        <div class="card-text">
-          <div class="card-name">Scintillation Detector Animation</div>
-          <div class="card-url">rangavirender.github.io</div>
-        </div>
-      </a>
-      <a class="card orange" href="https://www.vranga.in/geant4" target="_blank" rel="noopener">
-        <span class="card-dot"></span>
-        <div class="card-text">
-          <div class="card-name">GEANT4 Installation Guide</div>
-          <div class="card-url">vranga.in</div>
-        </div>
-      </a>
-    </div>
-  </section>
-
   <footer>VR · <a href="https://www.vranga.in" style="color:var(--slate);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='var(--teal)'" onmouseout="this.style.color='var(--slate)'">www.vranga.in</a></footer>
 </div>
 
 <script>
+/* ================================================================
+   LINKS DATA — add a new entry here to add a card to the page.
+   Each object needs:
+     name  — display title
+     url   — full URL
+   The domain shown under the title is extracted automatically.
+   ================================================================ */
+
+const SECTIONS = [
+  {
+    title: 'Calculators',
+    color: 'teal',
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+             <rect x="4" y="2" width="16" height="20" rx="2"/>
+             <path d="M8 7h8M8 11h8M8 15h5"/>
+           </svg>`,
+    links: [
+      { name: 'Two-body Kinematics',       url: 'https://skisickness.com/2020/02/kinematics/' },
+      { name: 'Cross-section Calculator',  url: 'https://rangavirender.github.io/site/cross-section-calculator.html' },
+      { name: 'Gamow-window Calculator',   url: 'https://rangavirender.github.io/site/gamow-window-calculator.html' },
+      { name: 'NRV Browser',               url: 'http://nrv.jinr.ru/nrv/' },
+      { name: 'Coulomb Barrier Calculator',url: 'https://rangavirender.github.io/site/coulomb_barrier_calculator.html' },
+      { name: 'Two-body Kinematics NRV',   url: 'http://nrv.jinr.ru/nrv/mobilenrv/kinematics/Kinematics2Body.html' },
+      { name: 'Lab Energy → CM Energy',    url: 'https://rangavirender.github.io/site/com_lab_converter.html' },
+      { name: 'Current Activity Calculator', url: 'https://rangavirender.github.io/site/activity_calculator.html' },
+      /* ADD NEW CALCULATORS HERE */
+    ],
+  },
+  {
+    title: 'Animations & Visualisations',
+    color: 'orange',
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+             <circle cx="12" cy="12" r="3"/>
+             <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+           </svg>`,
+    links: [
+      { name: 'Nuclear Reaction Animation',      url: 'https://rangavirender.github.io/site/nuclear-reaction-animation.html' },
+      { name: 'Nucleus Image Generator',         url: 'https://rangavirender.github.io/site/nucleus_image_generator.html' },
+      { name: 'Scintillation Detector Animation',url: 'https://rangavirender.github.io/site/scintillation_detector_animation.html' },
+      { name: 'GEANT4 Installation Guide',       url: 'https://www.vranga.in/geant4' },
+      /* ADD NEW ANIMATIONS HERE */
+    ],
+  },
+  /* ADD A WHOLE NEW SECTION HERE if needed — copy the object above */
+];
+
+/* ── Render sections ── */
+(function renderSections() {
+  const wrap = document.querySelector('.wrap');
+  const footer = wrap.querySelector('footer');
+
+  SECTIONS.forEach(({ title, color, icon, links }) => {
+    const section = document.createElement('section');
+
+    const cards = links.map(({ name, url }) => {
+      const domain = new URL(url).hostname.replace(/^www\./, '');
+      return `<a class="card ${color}" href="${url}" target="_blank" rel="noopener">
+        <span class="card-dot"></span>
+        <div class="card-text">
+          <div class="card-name">${name}</div>
+          <div class="card-url">${domain}</div>
+        </div>
+      </a>`;
+    }).join('');
+
+    section.innerHTML = `
+      <div class="section-header">
+        <div class="section-icon ${color}">${icon}</div>
+        <span class="section-title">${title}</span>
+      </div>
+      <div class="grid">${cards}</div>`;
+
+    wrap.insertBefore(section, footer);
+  });
+})();
+
 /* ── Particle track canvas ── */
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
