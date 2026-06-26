@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoM ↔ Lab Energy Converter (Non-relativistic)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0f1117; --s1:#181c27; --s2:#1e2333;
+    --bd:#2a3048; --bds:#3a4568;
+    --tp:#e8ecf4; --ts:#8b95b0; --tm:#4e5872;
+    --ac:#4f80ff; --acb:#1a2340; --act:#7fa4ff;
+    --okb:#0d2e1c; --okt:#4de09a;
+    --wb:#2b1e08; --wt:#f5c76b;
+    --db:#2b0f0f; --dt:#f55b5b;
+    --r:8px; --mono:'IBM Plex Mono',monospace; --sans:'Inter',sans-serif;
+  }
+  @media(prefers-color-scheme:light){
+    :root{
+      --bg:#f4f6fb; --s1:#fff; --s2:#f0f3fa;
+      --bd:#dde2ee; --bds:#bcc5dc;
+      --tp:#0f1117; --ts:#4a5470; --tm:#8b95b0;
+      --ac:#3060e8; --acb:#e8eeff; --act:#2050c8;
+      --okb:#e6f9ef; --okt:#0d7a48;
+      --wb:#fff8e6; --wt:#9a620a;
+      --db:#ffebeb; --dt:#d63030;
+    }
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--tp);font-family:var(--sans);font-size:15px;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:2.5rem 1rem 4rem;line-height:1.6}
+  .page{width:100%;max-width:580px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--act);text-transform:uppercase;margin-bottom:.4rem}
+  h1{font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1.2;margin-bottom:.35rem}
+  .subtitle{font-size:13px;color:var(--ts);margin-bottom:2rem}
+
+  .toggle-bar{display:grid;grid-template-columns:1fr 1fr;background:var(--s2);border:.5px solid var(--bd);border-radius:var(--r);padding:3px;margin-bottom:1.25rem}
+  .tbtn{padding:9px;border:none;background:transparent;border-radius:6px;font-family:var(--sans);font-size:13px;font-weight:500;color:var(--ts);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+  .tbtn.active{background:var(--s1);color:var(--tp);border:.5px solid var(--bds)}
+
+  .card{background:var(--s1);border:.5px solid var(--bd);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1rem}
+  .clabel{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--tm);font-family:var(--mono);margin-bottom:1rem}
+
+  .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .inp-block{display:flex;flex-direction:column;gap:5px}
+  .inp-block label{font-size:12px;color:var(--ts);font-family:var(--mono)}
+  .inp-block input{height:40px;padding:0 11px;font-size:14px;font-family:var(--mono);background:var(--s2);border:.5px solid var(--bd);border-radius:var(--r);color:var(--tp);outline:none;width:100%;transition:border-color .15s}
+  .inp-block input:focus{border-color:var(--ac)}
+  .inp-hint{font-size:11px;font-family:var(--mono);color:var(--tm);margin-top:3px;min-height:15px}
+  .hl{color:var(--act)}
+
+  .pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:.6rem}
+  .pill{padding:3px 10px;font-size:11px;font-family:var(--mono);background:var(--s2);color:var(--ts);border:.5px solid var(--bd);border-radius:20px;cursor:pointer;transition:all .15s}
+  .pill.active{background:var(--acb);color:var(--act);border-color:var(--ac)}
+
+  .energy-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+  select{height:40px;padding:0 8px;font-family:var(--mono);font-size:12px;background:var(--s2);border:.5px solid var(--bd);border-radius:var(--r);color:var(--ts);cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238b95b0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:26px;min-width:72px}
+
+  .nuclear-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:.6rem}
+
+  .res-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .rtile{background:var(--s2);border:.5px solid var(--bd);border-radius:var(--r);padding:.85rem 1rem}
+  .rtile.hi{border-color:var(--ac)}
+  .rlabel{font-size:10px;color:var(--tm);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+  .rval{font-size:20px;font-weight:500;font-family:var(--mono);color:var(--tp);word-break:break-all;line-height:1.2}
+  .rval.ac{color:var(--act)}
+  .runit{font-size:11px;color:var(--tm);font-family:var(--mono);margin-top:2px}
+
+  .warn-banner{background:var(--wb);color:var(--wt);border-radius:var(--r);padding:.55rem .9rem;font-size:12px;font-family:var(--mono);margin-top:.75rem;display:none;line-height:1.5}
+
+  .divider{height:.5px;background:var(--bd);margin:.9rem 0}
+
+  .err{font-size:12px;font-family:var(--mono);color:var(--dt);background:var(--db);border-radius:var(--r);padding:.5rem .85rem;margin-top:.75rem;display:none}
+
+  .preset-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:1rem}
+  .pbtn{padding:3px 10px;font-size:11px;font-family:var(--mono);background:var(--acb);color:var(--act);border:.5px solid transparent;border-radius:20px;cursor:pointer;transition:border-color .15s}
+  .pbtn:hover{border-color:var(--ac)}
+
+  .formula{background:var(--s1);border:.5px solid var(--bd);border-left:2px solid var(--ac);border-radius:0 12px 12px 0;padding:1rem 1.25rem;font-family:var(--mono);font-size:12px;color:var(--ts);line-height:2}
+  .footer{margin-top:1.75rem;font-size:11px;color:var(--tm);font-family:var(--mono);text-align:center;letter-spacing:.04em}
+
+  @media(max-width:440px){
+    .res-grid,.input-grid,.nuclear-fields{grid-template-columns:1fr}
+    h1{font-size:21px}
+  }
+</style>
+</head>
+<body>
+<main class="page" aria-label="Non-relativistic CoM to Lab energy converter">
+
+  <div class="eyebrow">Classical nuclear physics · Non-relativistic</div>
+  <h1>CoM ↔ Lab Energy</h1>
+  <p class="subtitle">Non-relativistic kinematics. Target at rest in the lab. Enter masses by particle type or mass number A, then convert kinetic energies between frames.</p>
+
+  <div class="toggle-bar" role="group">
+    <button class="tbtn active" id="btn-c2l" onclick="setMode('c2l')" aria-pressed="true">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      CoM → Lab
+    </button>
+    <button class="tbtn" id="btn-l2c" onclick="setMode('l2c')" aria-pressed="false">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      Lab → CoM
+    </button>
+  </div>
+
+  <!-- Presets -->
+  <div class="preset-row">
+    <button class="pbtn" onclick="loadPreset('pp')">p + p</button>
+    <button class="pbtn" onclick="loadPreset('pn')">p + n</button>
+    <button class="pbtn" onclick="loadPreset('pHe')">p + ⁴He</button>
+    <button class="pbtn" onclick="loadPreset('pC')">p + ¹²C</button>
+    <button class="pbtn" onclick="loadPreset('pPb')">p + ²⁰⁸Pb</button>
+    <button class="pbtn" onclick="loadPreset('dPb')">d + ²⁰⁸Pb</button>
+    <button class="pbtn" onclick="loadPreset('AlAl')">²⁷Al + ²⁷Al</button>
+  </div>
+
+  <!-- Masses card -->
+  <div class="card">
+    <div class="clabel">Masses</div>
+    <div class="input-grid">
+
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--tm);letter-spacing:.06em;text-transform:uppercase;margin-bottom:.5rem">Projectile (m₁)</div>
+        <div class="pills" id="pills1">
+          <button class="pill active" onclick="setPtype(1,'p')">p</button>
+          <button class="pill" onclick="setPtype(1,'n')">n</button>
+          <button class="pill" onclick="setPtype(1,'d')">d</button>
+          <button class="pill" onclick="setPtype(1,'A')">Nucleus</button>
+        </div>
+        <div id="nuc1" style="display:none" class="nuclear-fields">
+          <div class="inp-block">
+            <label for="A1">A (mass no.)</label>
+            <input id="A1" type="number" min="1" max="300" step="1" value="4" oninput="nuclChanged(1)">
+          </div>
+          <div class="inp-block">
+            <label for="Z1">Z (proton no.)</label>
+            <input id="Z1" type="number" min="0" max="120" step="1" value="2" oninput="nuclChanged(1)">
+          </div>
+        </div>
+        <div class="inp-hint" id="hint1"></div>
+      </div>
+
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--tm);letter-spacing:.06em;text-transform:uppercase;margin-bottom:.5rem">Target at rest (m₂)</div>
+        <div class="pills" id="pills2">
+          <button class="pill active" onclick="setPtype(2,'p')">p</button>
+          <button class="pill" onclick="setPtype(2,'n')">n</button>
+          <button class="pill" onclick="setPtype(2,'d')">d</button>
+          <button class="pill" onclick="setPtype(2,'A')">Nucleus</button>
+        </div>
+        <div id="nuc2" style="display:none" class="nuclear-fields">
+          <div class="inp-block">
+            <label for="A2">A (mass no.)</label>
+            <input id="A2" type="number" min="1" max="300" step="1" value="208" oninput="nuclChanged(2)">
+          </div>
+          <div class="inp-block">
+            <label for="Z2">Z (proton no.)</label>
+            <input id="Z2" type="number" min="0" max="120" step="1" value="82" oninput="nuclChanged(2)">
+          </div>
+        </div>
+        <div class="inp-hint" id="hint2"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Energy input card -->
+  <div class="card">
+    <div class="clabel" id="elabel">CoM kinetic energy</div>
+    <div class="energy-row">
+      <div class="inp-block" style="flex:1">
+        <label for="eVal" id="eValLabel">T_cm — total kinetic energy in CoM frame</label>
+        <input id="eVal" type="number" min="0" step="any" value="10" oninput="calc()">
+      </div>
+      <select id="eUnit" onchange="calc()">
+        <option>MeV</option>
+        <option>keV</option>
+        <option>GeV</option>
+        <option>eV</option>
+      </select>
+    </div>
+    <div class="err" id="err-msg" role="alert"></div>
+    <div class="warn-banner" id="warn-rel">
+      ⚠ v/c exceeds 0.1 — relativistic corrections may be significant. Consider switching to a relativistic calculator.
+    </div>
+  </div>
+
+  <!-- Results card -->
+  <div class="card">
+    <div class="clabel">Results</div>
+    <div class="res-grid">
+      <div class="rtile hi">
+        <div class="rlabel" id="r1lbl">Lab kinetic energy T_lab</div>
+        <div class="rval ac" id="r1val">—</div>
+        <div class="runit" id="r1unit">MeV</div>
+      </div>
+      <div class="rtile">
+        <div class="rlabel">CoM kinetic energy T_cm</div>
+        <div class="rval" id="r2val">—</div>
+        <div class="runit" id="r2unit">MeV</div>
+      </div>
+      <div class="rtile">
+        <div class="rlabel">Lab velocity v_lab</div>
+        <div class="rval" id="rv1">—</div>
+        <div class="runit">m/s</div>
+      </div>
+      <div class="rtile">
+        <div class="rlabel">CoM frame velocity v_cm</div>
+        <div class="rval" id="rvcm">—</div>
+        <div class="runit">m/s</div>
+      </div>
+      <div class="rtile">
+        <div class="rlabel">Reduced mass μ</div>
+        <div class="rval" id="rmu">—</div>
+        <div class="runit" id="rmuunit">u</div>
+      </div>
+      <div class="rtile">
+        <div class="rlabel">v_projectile / c</div>
+        <div class="rval" id="rvc">—</div>
+        <div class="runit">dimensionless</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div style="font-size:12px;color:var(--ts)" id="rdesc"></div>
+  </div>
+
+  <div class="formula">
+    <span class="hl">Non-relativistic, target at rest in lab</span><br>
+    μ = m₁·m₂ / (m₁ + m₂) &nbsp; (reduced mass)<br>
+    v_cm = v_lab · m₁ / (m₁ + m₂) &nbsp; (CoM velocity)<br>
+    T_lab = ½ m₁ v_lab² &nbsp; (lab kinetic energy)<br>
+    T_cm = ½ μ v_rel² = T_lab · μ / m₁ = T_lab · m₂ / (m₁ + m₂)<br>
+    <span class="hl">T_lab = T_cm · (m₁ + m₂) / m₂</span>
+  </div>
+
+  <div class="footer">Non-relativistic limit · masses via Bethe–Weizsäcker · 1 u = 931.494 MeV/c²</div>
+  <div class="footer" style="margin-top:.6rem">VR · <a href="https://www.vranga.in" target="_blank" rel="noopener" style="color:var(--act);text-decoration:none;border-bottom:.5px solid var(--act)">www.vranga.in</a></div>
+</main>
+
+<script>
+// Masses in atomic mass units (u). 1 u = 931.494 MeV/c²
+const AMU_MEV = 931.494;  // MeV per u
+const C = 2.99792458e8;   // m/s
+
+// Known particle masses in u
+const KNOWN_MASS_U = { p: 1.007276, n: 1.008665, d: 2.013553 };
+
+// Bethe-Weizsäcker in MeV, return mass in u
+function nucMassU(A, Z) {
+  if (A === 1 && Z === 1) return KNOWN_MASS_U.p;
+  if (A === 1 && Z === 0) return KNOWN_MASS_U.n;
+  if (A === 2 && Z === 1) return KNOWN_MASS_U.d;
+  const N = A - Z;
+  // BW coefficients in MeV
+  const av=15.67, as=17.23, ac=0.714, aa=93.15, ap=11.2;
+  let pair = 0;
+  if (A % 2 === 0) pair = (Z % 2 === 0) ? -ap / Math.sqrt(A) : ap / Math.sqrt(A);
+  const BE = av*A - as*Math.pow(A,2/3) - ac*Z*(Z-1)/Math.pow(A,1/3)
+           - aa*(A-2*Z)**2/A - pair;
+  // mass = Z*mp + N*mn - BE/c²  (in u)
+  const massU = Z * KNOWN_MASS_U.p + N * KNOWN_MASS_U.n - BE / AMU_MEV;
+  return Math.max(massU, A * 0.9);
+}
+
+const ELEM = ['','H','He','Li','Be','B','C','N','O','F','Ne','Na','Mg','Al','Si','P','S',
+  'Cl','Ar','K','Ca','Sc','Ti','V','Cr','Mn','Fe','Co','Ni','Cu','Zn','Ga','Ge','As','Se',
+  'Br','Kr','Rb','Sr','Y','Zr','Nb','Mo','Tc','Ru','Rh','Pd','Ag','Cd','In','Sn','Sb','Te',
+  'I','Xe','Cs','Ba','La','Ce','Pr','Nd','Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb',
+  'Lu','Hf','Ta','W','Re','Os','Ir','Pt','Au','Hg','Tl','Pb','Bi','Po','At','Rn','Fr','Ra',
+  'Ac','Th','Pa','U'];
+const KNOWN_SYM = {'1-1':'p','1-0':'n','2-1':'d','3-2':'³He','4-2':'⁴He',
+  '12-6':'¹²C','14-7':'¹⁴N','16-8':'¹⁶O','27-13':'²⁷Al','56-26':'⁵⁶Fe',
+  '197-79':'¹⁹⁷Au','208-82':'²⁰⁸Pb','238-92':'²³⁸U'};
+function isoSym(A, Z) { return KNOWN_SYM[A+'-'+Z] || (A + (ELEM[Z] || Z)); }
+
+let ptype = [null, 'p', 'p'];
+let mode = 'c2l';
+
+function getMass(i) {
+  const t = ptype[i];
+  if (t === 'p') return { u: KNOWN_MASS_U.p, sym: 'p' };
+  if (t === 'n') return { u: KNOWN_MASS_U.n, sym: 'n' };
+  if (t === 'd') return { u: KNOWN_MASS_U.d, sym: 'd' };
+  const A = parseInt(document.getElementById('A'+i).value) || 1;
+  const Z = parseInt(document.getElementById('Z'+i).value) || 0;
+  return { u: nucMassU(A, Z), sym: isoSym(A, Z) };
+}
+
+function setPtype(i, t) {
+  ptype[i] = t;
+  const order = ['p','n','d','A'];
+  document.getElementById('pills'+i).querySelectorAll('.pill').forEach((b,j) =>
+    b.classList.toggle('active', order[j] === t));
+  document.getElementById('nuc'+i).style.display = t === 'A' ? '' : 'none';
+  updateHint(i);
+  calc();
+}
+
+function nuclChanged(i) { updateHint(i); calc(); }
+
+function updateHint(i) {
+  const p = getMass(i);
+  const el = document.getElementById('hint'+i);
+  if (ptype[i] === 'A') {
+    const A = parseInt(document.getElementById('A'+i).value)||1;
+    const Z = parseInt(document.getElementById('Z'+i).value)||0;
+    if (Z > A) { el.innerHTML = '<span style="color:var(--dt)">Z must be ≤ A</span>'; return; }
+    el.innerHTML = '<span class="hl">' + p.sym + '</span>  M = ' + p.u.toFixed(5) + ' u  (' + (p.u * AMU_MEV).toFixed(2) + ' MeV/c²)';
+  } else {
+    const labels = {p:'proton', n:'neutron', d:'deuteron'};
+    el.innerHTML = '<span class="hl">' + labels[ptype[i]] + '</span>  m = ' + p.u.toFixed(6) + ' u  (' + (p.u * AMU_MEV).toFixed(3) + ' MeV/c²)';
+  }
+}
+
+function setMode(m) {
+  mode = m;
+  const c2l = m === 'c2l';
+  document.getElementById('btn-c2l').classList.toggle('active', c2l);
+  document.getElementById('btn-l2c').classList.toggle('active', !c2l);
+  document.getElementById('btn-c2l').setAttribute('aria-pressed', c2l);
+  document.getElementById('btn-l2c').setAttribute('aria-pressed', !c2l);
+  if (c2l) {
+    document.getElementById('elabel').textContent = 'CoM kinetic energy';
+    document.getElementById('eValLabel').textContent = 'T_cm — total kinetic energy in CoM frame';
+    document.getElementById('r1lbl').textContent = 'Lab kinetic energy T_lab';
+  } else {
+    document.getElementById('elabel').textContent = 'Lab kinetic energy';
+    document.getElementById('eValLabel').textContent = 'T_lab — projectile kinetic energy in lab frame';
+    document.getElementById('r1lbl').textContent = 'CoM kinetic energy T_cm';
+  }
+  calc();
+}
+
+const PRESETS = {
+  'pp':   { e:'10',  u:'MeV', p1:'p', p2:'p' },
+  'pn':   { e:'10',  u:'MeV', p1:'p', p2:'n' },
+  'pHe':  { e:'20',  u:'MeV', p1:'p', p2:'A', A2:4,   Z2:2  },
+  'pC':   { e:'50',  u:'MeV', p1:'p', p2:'A', A2:12,  Z2:6  },
+  'pPb':  { e:'100', u:'MeV', p1:'p', p2:'A', A2:208, Z2:82 },
+  'dPb':  { e:'100', u:'MeV', p1:'d', p2:'A', A2:208, Z2:82 },
+  'AlAl': { e:'200', u:'MeV', p1:'A', p2:'A', A1:27, Z1:13, A2:27, Z2:13 },
+};
+
+function loadPreset(k) {
+  const p = PRESETS[k];
+  document.getElementById('eVal').value = p.e;
+  document.getElementById('eUnit').value = p.u;
+  if (p.A1) { document.getElementById('A1').value = p.A1; document.getElementById('Z1').value = p.Z1; }
+  if (p.A2) { document.getElementById('A2').value = p.A2; document.getElementById('Z2').value = p.Z2; }
+  setPtype(1, p.p1);
+  setPtype(2, p.p2);
+  setMode('c2l');
+}
+
+function toMeV(v, u) {
+  if (u === 'keV') return v / 1000;
+  if (u === 'GeV') return v * 1000;
+  if (u === 'eV')  return v / 1e6;
+  return v; // MeV
+}
+function fromMeV(v, u) {
+  if (u === 'keV') return v * 1000;
+  if (u === 'GeV') return v / 1000;
+  if (u === 'eV')  return v * 1e6;
+  return v;
+}
+
+function fmt(n, sig=5) {
+  if (!isFinite(n) || isNaN(n)) return '—';
+  const a = Math.abs(n);
+  if (a === 0) return '0';
+  if (a >= 1e9 || (a < 0.001 && a > 0)) return n.toExponential(3);
+  if (a >= 1000) return n.toLocaleString('en', { maximumFractionDigits: 2 });
+  return +n.toPrecision(sig) + '';
+}
+function sv(id, v, sig) { document.getElementById(id).textContent = fmt(v, sig); }
+
+function showErr(msg) {
+  const el = document.getElementById('err-msg');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = '';
+  ['r1val','r2val','rv1','rvcm','rmu','rvc'].forEach(id => document.getElementById(id).textContent = '—');
+}
+function hideErr() { document.getElementById('err-msg').style.display = 'none'; }
+
+function calc() {
+  hideErr();
+  document.getElementById('warn-rel').style.display = 'none';
+
+  const raw = parseFloat(document.getElementById('eVal').value);
+  const u   = document.getElementById('eUnit').value;
+  if (!isFinite(raw) || raw < 0) {
+    ['r1val','r2val','rv1','rvcm','rmu','rvc'].forEach(id => document.getElementById(id).textContent = '—');
+    return;
+  }
+
+  let p1, p2;
+  try { p1 = getMass(1); p2 = getMass(2); } catch(e) { return; }
+
+  const m1 = p1.u;  // in u
+  const m2 = p2.u;  // in u
+  if (m2 <= 0 || m1 <= 0) { showErr('Masses must be greater than zero.'); return; }
+
+  // All energies in MeV, masses in u, velocities in m/s
+  const m1_MeV = m1 * AMU_MEV;
+  const m2_MeV = m2 * AMU_MEV;
+  const mu_u   = (m1 * m2) / (m1 + m2);       // reduced mass in u
+  const mu_MeV = mu_u * AMU_MEV;
+  const M_MeV  = m1_MeV + m2_MeV;
+
+  const E_in = toMeV(raw, u);
+
+  let T_lab, T_cm;
+
+  // NR relations:
+  // T_cm = T_lab * m2 / (m1+m2)   [equivalent: T_cm = T_lab * mu/m1]
+  // T_lab = T_cm * (m1+m2) / m2
+  if (mode === 'c2l') {
+    T_cm  = E_in;
+    T_lab = T_cm * (m1 + m2) / m2;
+  } else {
+    T_lab = E_in;
+    T_cm  = T_lab * m2 / (m1 + m2);
+  }
+
+  // v_lab of projectile: T_lab = ½ m1 v²  =>  v = sqrt(2*T_lab/m1)
+  // using SI: T in J, m in kg
+  const T_lab_J = T_lab * 1e6 * 1.60218e-19;          // MeV -> J
+  const m1_kg   = m1 * 1.66054e-27;                    // u -> kg
+  const m2_kg   = m2 * 1.66054e-27;
+  const v_lab   = Math.sqrt(2 * T_lab_J / m1_kg);      // m/s
+  const v_cm    = v_lab * m1 / (m1 + m2);              // CoM frame velocity m/s
+  const v_over_c = v_lab / C;
+
+  const ou = u;
+  if (mode === 'c2l') {
+    sv('r1val', fromMeV(T_lab, ou)); document.getElementById('r1unit').textContent = ou;
+    sv('r2val', fromMeV(T_cm,  ou)); document.getElementById('r2unit').textContent = ou;
+  } else {
+    sv('r1val', fromMeV(T_cm,  ou)); document.getElementById('r1unit').textContent = ou;
+    sv('r2val', fromMeV(T_lab, ou)); document.getElementById('r2unit').textContent = ou;
+  }
+
+  sv('rv1',  v_lab, 4);
+  sv('rvcm', v_cm,  4);
+  sv('rmu',  mu_u,  5);  document.getElementById('rmuunit').textContent = 'u  (' + fmt(mu_MeV, 5) + ' MeV/c²)';
+  sv('rvc',  v_over_c, 4);
+
+  // Regime description
+  const desc = document.getElementById('rdesc');
+  desc.textContent = p1.sym + ' (m₁ = ' + fmt(m1, 5) + ' u) on ' + p2.sym
+    + ' (m₂ = ' + fmt(m2, 5) + ' u) · μ = ' + fmt(mu_u, 5) + ' u'
+    + ' · T_lab/T_cm = ' + fmt(T_lab/T_cm, 4);
+
+  // Warn if v/c > 0.1
+  if (v_over_c > 0.1) {
+    document.getElementById('warn-rel').style.display = '';
+  }
+}
+
+// Init
+updateHint(1); updateHint(2);
+loadPreset('pp');
+</script>
+</body>
+</html>
