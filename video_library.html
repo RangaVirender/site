@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VR Video Library</title>
+  <style>
+    :root {
+      --bg: #0f0f13;
+      --surface: #1a1a24;
+      --surface2: #22222f;
+      --border: #2e2e3e;
+      --accent: #7c6af7;
+      --accent2: #f76a8c;
+      --text: #e8e8f0;
+      --muted: #8888aa;
+      --tag-bg: #2a2040;
+      --header-bg: linear-gradient(135deg, #1a1230 0%, #12121c 100%);
+    }
+
+    :root.light {
+      --bg: #f4f4f8;
+      --surface: #ffffff;
+      --surface2: #ebebf2;
+      --border: #d4d4e0;
+      --text: #18181f;
+      --muted: #666688;
+      --tag-bg: #ede9ff;
+      --header-bg: linear-gradient(135deg, #ede9ff 0%, #f4f4f8 100%);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 28px 32px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+
+    .count-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.78rem;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    .search-wrap {
+      position: relative;
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    #search {
+      width: 320px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 0.9rem;
+      padding: 10px 14px 10px 40px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    #search:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124, 106, 247, 0.15);
+    }
+
+    #search::placeholder { color: var(--muted); }
+
+    .tags-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .tag-filter {
+      background: var(--tag-bg);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.18s;
+      user-select: none;
+    }
+
+    .tag-filter:hover { border-color: var(--accent); color: var(--text); }
+
+    .tag-filter.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .tag-filter.all.active {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-color: transparent;
+    }
+
+    main {
+      padding: 28px 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+      font-size: 1rem;
+      display: none;
+    }
+
+    .no-results svg { margin-bottom: 14px; opacity: 0.4; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 22px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent);
+      box-shadow: 0 8px 32px rgba(124,106,247,0.12);
+    }
+
+    .card-body {
+      padding: 16px 18px 18px;
+    }
+
+    .card-title {
+      font-size: 0.97rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      line-height: 1.4;
+      color: var(--text);
+    }
+
+    .card-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      background: var(--tag-bg);
+      border: 1px solid rgba(124,106,247,0.2);
+      border-radius: 12px;
+      color: var(--accent);
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .tag:hover { background: rgba(124,106,247,0.2); }
+
+    @media (max-width: 640px) {
+      header { padding: 18px 16px 16px; }
+      main { padding: 18px 16px; }
+      #search { width: 100%; }
+      .header-top { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <h1><span style="background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">&#9654; VR</span> Video Library</h1>
+      <a href="https://www.vranga.in" target="_blank" style="color:var(--muted);font-size:0.82rem;text-decoration:none;transition:color 0.18s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">www.vranga.in</a>
+    </div>
+    <span class="count-badge" id="count">0 videos</span>
+    <div style="display:flex;align-items:center;gap:12px;">
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search" type="text" placeholder="Search videos…" />
+    </div>
+    <button id="themeToggle" onclick="toggleTheme()" title="Toggle theme" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;padding:8px 10px;display:flex;align-items:center;transition:border-color 0.18s,color 0.18s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+      <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    </div>
+  </div>
+  <div class="tags-row" id="tagFilters"></div>
+</header>
+
+<main>
+  <div class="no-results" id="noResults">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <p>No videos match your search.</p>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<script>
+  const videos = [
+    {
+      id: 'oI_X2cMHNe0',
+      title: 'How Electricity Actually Works',
+      desc: 'Energy doesn\'t flow through wires — it flows through the fields around them. A mind-bending look at electromagnetism.',
+      tags: ['veritasium', 'physics', 'electricity', 'electromagnetism']
+    },
+    {
+      id: 'HeQX2HjkcNo',
+      title: 'Math\'s Fundamental Flaw',
+      desc: 'Not everything that is true can be proven. The discovery that transformed infinity and led to the modern computer.',
+      tags: ['veritasium', 'math', 'logic', 'godel']
+    },
+    {
+      id: '24GfgNtnjXc',
+      title: 'You\'re Probably Wrong About Rainbows',
+      desc: 'Rainbows are far stranger than you think — why they\'re circular, why it\'s brighter underneath, and what polarised sunglasses reveal.',
+      tags: ['veritasium', 'optics', 'physics', 'light']
+    },
+    {
+      id: 'NIk_0AW5hFU',
+      title: 'There Is Something Faster Than Light',
+      desc: 'Quantum mechanics reveals a real faster-than-light effect — and how the Einstein–Bohr argument changed physics forever.',
+      tags: ['veritasium', 'quantum', 'physics', 'relativity']
+    }
+  ];
+
+  let activeTag = 'all';
+  let searchQuery = '';
+
+  function allTags() {
+    const set = new Set();
+    videos.forEach(v => v.tags.forEach(t => set.add(t.trim().toLowerCase())));
+    return [...set].sort();
+  }
+
+  function renderTags() {
+    const row = document.getElementById('tagFilters');
+    row.innerHTML = '';
+    const all = document.createElement('span');
+    all.className = 'tag-filter all' + (activeTag === 'all' ? ' active' : '');
+    all.textContent = 'All';
+    all.onclick = () => { activeTag = 'all'; render(); };
+    row.appendChild(all);
+    allTags().forEach(t => {
+      const el = document.createElement('span');
+      el.className = 'tag-filter' + (activeTag === t ? ' active' : '');
+      el.textContent = t;
+      el.onclick = () => { activeTag = t; render(); };
+      row.appendChild(el);
+    });
+  }
+
+  function matchesFilter(v) {
+    const q = searchQuery.toLowerCase();
+    const matchTag = activeTag === 'all' || v.tags.map(t => t.toLowerCase()).includes(activeTag);
+    const matchSearch = !q || v.title.toLowerCase().includes(q) || (v.desc || '').toLowerCase().includes(q) || v.tags.some(t => t.toLowerCase().includes(q));
+    return matchTag && matchSearch;
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function filterByTag(t) {
+    activeTag = t.toLowerCase();
+    render();
+  }
+
+  function render() {
+    const filtered = videos.filter(matchesFilter);
+    renderTags();
+
+    const grid = document.getElementById('grid');
+    const noRes = document.getElementById('noResults');
+    document.getElementById('count').textContent = `${filtered.length} video${filtered.length !== 1 ? 's' : ''}`;
+    noRes.style.display = filtered.length === 0 ? 'block' : 'none';
+
+    grid.innerHTML = '';
+    filtered.forEach(v => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-body">
+          <div class="card-title">${escHtml(v.title)}</div>
+          ${v.desc ? `<div class="card-desc">${escHtml(v.desc)}</div>` : ''}
+          <div class="card-tags">
+            ${v.tags.map(t => `<span class="tag" onclick="event.stopPropagation();filterByTag('${escHtml(t)}')">${escHtml(t)}</span>`).join('')}
+          </div>
+        </div>
+      `;
+      card.addEventListener('click', () => window.open(`https://www.youtube.com/watch?v=${v.id}`, '_blank'));
+      grid.appendChild(card);
+    });
+  }
+
+  const moonIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+  const sunIcon  = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+
+  function toggleTheme() {
+    const isLight = document.documentElement.classList.toggle('light');
+    document.getElementById('themeIcon').parentElement.innerHTML = isLight ? sunIcon : moonIcon;
+  }
+
+  document.getElementById('search').addEventListener('input', e => {
+    searchQuery = e.target.value;
+    render();
+  });
+
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      document.getElementById('search').focus();
+    }
+  });
+
+  render();
+</script>
+</body>
+</html>
