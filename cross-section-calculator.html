@@ -18,6 +18,7 @@
       --text-dim: #6e7681;
       --glow: rgba(88, 166, 255, 0.15);
       --glow2: rgba(63, 185, 80, 0.12);
+      --err-col: #e3b341;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -176,6 +177,43 @@
       line-height: 1;
     }
 
+    /* ── Error sub-row ── */
+    .err-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 7px;
+    }
+    .err-label {
+      font-size: 13px;
+      color: var(--err-col);
+      white-space: nowrap;
+      font-family: 'Courier New', monospace;
+      font-weight: 600;
+      min-width: 14px;
+    }
+    .err-row input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid rgba(227, 179, 65, 0.30);
+      border-radius: 8px;
+      padding: 7px 10px;
+      color: var(--err-col);
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+      font-weight: 600;
+      outline: none;
+      transition: border-color .15s;
+      min-width: 0;
+    }
+    .err-row input:focus { border-color: var(--err-col); }
+    .err-row input::placeholder { color: var(--text-dim); font-weight: 400; }
+    .err-row .err-unit {
+      font-size: 12px;
+      color: rgba(227,179,65,.65);
+      white-space: nowrap;
+    }
+
     /* ── Buttons ── */
     .actions {
       display: flex;
@@ -259,7 +297,7 @@
       font-style: italic;
     }
     .result-card .result-value {
-      font-size: clamp(20px, 3vw, 28px);
+      font-size: clamp(18px, 3vw, 24px);
       font-weight: 700;
       font-family: 'Courier New', monospace;
       letter-spacing: .02em;
@@ -267,14 +305,22 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      flex-wrap: wrap;
     }
     .result-card.diff .result-value { color: #79c0ff; }
     .result-card.total .result-value { color: #56d364; }
 
+    .result-card .result-uncertainty {
+      font-size: 14px;
+      font-family: 'Courier New', monospace;
+      margin-top: 8px;
+      color: var(--err-col);
+      min-height: 20px;
+    }
     .result-card .result-unit {
       font-size: 15px;
       color: var(--text-muted);
-      margin-top: 8px;
+      margin-top: 6px;
     }
 
     .result-placeholder {
@@ -304,6 +350,24 @@
       font-size: 14px;
       margin-top: 40px;
       line-height: 2;
+    }
+
+    /* ── Error legend ── */
+    .err-legend {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: rgba(227,179,65,.7);
+      margin-bottom: 20px;
+      margin-top: -16px;
+    }
+    .err-legend-dot {
+      width: 8px; height: 8px;
+      border-radius: 2px;
+      background: var(--err-col);
+      opacity: .7;
+      flex-shrink: 0;
     }
 
     @media (max-width: 480px) {
@@ -336,6 +400,12 @@
       &nbsp;&nbsp;&nbsp;&middot;&nbsp;&nbsp;&nbsp;
       <strong>&sigma;<sub>total</sub> = 4&pi; &middot; d&sigma;/d&Omega;</strong>
     </div>
+  </div>
+
+  <!-- Error legend -->
+  <div class="err-legend">
+    <span class="err-legend-dot"></span>
+    Gold fields (&plusmn;) are 1&sigma; uncertainties — defaults are pre-filled; edit as needed.
   </div>
 
   <!-- Section: Projectile & Target -->
@@ -378,6 +448,11 @@
         <input id="Percent" type="number" placeholder="e.g. 68.1" min="0" max="100" step="any" value="68.1" />
         <span class="unit">%</span>
       </div>
+      <div class="err-row">
+        <span class="err-label">&plusmn;</span>
+        <input id="dPercent" type="number" placeholder="abs. %" min="0" step="any" value="0.5" />
+        <span class="err-unit">% (abs.)</span>
+      </div>
     </div>
   </div>
 
@@ -392,6 +467,11 @@
       <div class="input-row">
         <input id="Charge" type="number" placeholder="e.g. 100" min="0" step="any" value="100" />
         <span class="unit">nC</span>
+      </div>
+      <div class="err-row">
+        <span class="err-label">&plusmn;</span>
+        <input id="dCharge" type="number" placeholder="1% of Q" min="0" step="any" value="1" />
+        <span class="err-unit">nC</span>
       </div>
     </div>
     <div class="field">
@@ -415,6 +495,11 @@
         <input id="Areal" type="number" placeholder="e.g. 1.5e-3" min="0" step="any" value="0.0015" />
         <span class="unit">g/cm&sup2;</span>
       </div>
+      <div class="err-row">
+        <span class="err-label">&plusmn;</span>
+        <input id="dAreal" type="number" placeholder="1% of &rho;" min="0" step="any" value="0.000015" />
+        <span class="err-unit">g/cm&sup2;</span>
+      </div>
     </div>
   </div>
 
@@ -430,12 +515,22 @@
         <input id="Radius" type="number" placeholder="e.g. 2.5" min="0" step="any" value="2.5" />
         <span class="unit">cm</span>
       </div>
+      <div class="err-row">
+        <span class="err-label">&plusmn;</span>
+        <input id="dRadius" type="number" placeholder="e.g. 0.05" min="0" step="any" value="0.05" />
+        <span class="err-unit">cm</span>
+      </div>
     </div>
     <div class="field">
       <label>Distance from target to detector</label>
       <div class="input-row">
         <input id="Distance" type="number" placeholder="e.g. 15" min="0" step="any" value="15" />
         <span class="unit">cm</span>
+      </div>
+      <div class="err-row">
+        <span class="err-label">&plusmn;</span>
+        <input id="dDistance" type="number" placeholder="e.g. 0.1" min="0" step="any" value="0.1" />
+        <span class="err-unit">cm</span>
       </div>
     </div>
     <div class="field">
@@ -444,12 +539,22 @@
         <input id="Eff" type="number" placeholder="e.g. 0.85" min="0" max="1" step="any" value="0.85" />
         <span class="unit">&mdash;</span>
       </div>
+      <div class="err-row">
+        <span class="err-label">&plusmn;</span>
+        <input id="dEff" type="number" placeholder="1% of &epsilon;" min="0" step="any" value="0.0085" />
+        <span class="err-unit">(abs.)</span>
+      </div>
     </div>
     <div class="field">
       <label>Area under full-energy peak</label>
       <div class="input-row">
         <input id="Area" type="number" placeholder="e.g. 12500" min="0" step="any" value="12500" />
         <span class="unit">counts</span>
+      </div>
+      <div class="err-row">
+        <span class="err-label">&plusmn;</span>
+        <input id="dArea" type="number" placeholder="&radic;N (Poisson)" min="0" step="any" />
+        <span class="err-unit">counts</span>
       </div>
     </div>
   </div>
@@ -469,18 +574,22 @@
       <div class="result-label">Differential Cross Section</div>
       <div class="result-symbol">d&sigma;/d&Omega;</div>
       <div class="result-value" id="outDiff"><span class="result-placeholder">&#x2014;</span></div>
+      <div class="result-uncertainty" id="outDiffErr"></div>
       <div class="result-unit">milli barn / sr</div>
     </div>
     <div class="result-card total">
       <div class="result-label">Total Cross Section</div>
       <div class="result-symbol">&sigma;<sub>total</sub></div>
       <div class="result-value" id="outTotal"><span class="result-placeholder">&#x2014;</span></div>
+      <div class="result-uncertainty" id="outTotalErr"></div>
       <div class="result-unit">milli barn</div>
     </div>
   </div>
 
   <div class="footnote">
     1 barn = 10&minus;&sup2;&sup4; cm&sup2; &nbsp;&middot;&nbsp; N<sub>A</sub> = 6.022 &times; 10<sup>23</sup> mol<sup>&minus;1</sup> &nbsp;&middot;&nbsp; e = 1.6 &times; 10<sup>&minus;19</sup> C
+    <br>
+    Uncertainties propagated in quadrature: (&delta;&sigma;/&sigma;)&sup2; = (&delta;N/N)&sup2; + (&delta;Q/Q)&sup2; + (&delta;&rho;/&rho;)&sup2; + (&delta;f/f)&sup2; + (&delta;&epsilon;/&epsilon;)&sup2; + (&delta;&Omega;/&Omega;)&sup2;
     <br><br>
     <a href="https://www.vranga.in" target="_blank" rel="noopener"
        style="color:var(--text-dim);text-decoration:none;border-bottom:1px solid var(--border);padding-bottom:1px;transition:color .15s;"
@@ -504,38 +613,49 @@
     document.getElementById('errorMsg').classList.remove('visible');
   }
 
+  /* Fill dArea default = sqrt(N) whenever Area changes */
+  document.getElementById('Area').addEventListener('input', function () {
+    const n = parseFloat(this.value);
+    const dAreaEl = document.getElementById('dArea');
+    if (!isNaN(n) && n > 0 && dAreaEl.dataset.userEdited !== '1') {
+      dAreaEl.value = Math.sqrt(n).toFixed(2);
+    }
+  });
+  document.getElementById('dArea').addEventListener('input', function () {
+    this.dataset.userEdited = '1';
+  });
+
   function calculate() {
     hideError();
 
-    const fields = {
-      'Area (counts)': 'Area',
-      'Charge state': 'ChargeState',
-      'Mass no. of target (A)': 'Atarget',
-      'Total charge (nC)': 'Charge',
-      'Areal density (g/cm²)': 'Areal',
+    const required = {
+      'Area (counts)':           'Area',
+      'Charge state':            'ChargeState',
+      'Mass no. of target (A)':  'Atarget',
+      'Total charge (nC)':       'Charge',
+      'Areal density (g/cm²)':   'Areal',
       'Mass % of target nuclei': 'Percent',
-      'Detector efficiency': 'Eff',
-      'Detector radius (cm)': 'Radius',
-      'Distance (cm)': 'Distance',
+      'Detector efficiency':     'Eff',
+      'Detector radius (cm)':    'Radius',
+      'Distance (cm)':           'Distance',
     };
 
-    for (const [label, id] of Object.entries(fields)) {
-      const v = getVal(id);
-      if (isNaN(v)) {
+    for (const [label, id] of Object.entries(required)) {
+      if (isNaN(getVal(id))) {
         showError(`Missing or invalid input: "${label}"`);
         return;
       }
     }
 
-    const N      = getVal('Area');
-    const q      = getVal('ChargeState');
-    const A      = getVal('Atarget');
-    const Q      = getVal('Charge');
-    const rho    = getVal('Areal');
-    const pct    = getVal('Percent');
-    const eff    = getVal('Eff');
-    const r      = getVal('Radius');
-    const d      = getVal('Distance');
+    const N   = getVal('Area');
+    const q   = getVal('ChargeState');
+    const A   = getVal('Atarget');
+    const Q   = getVal('Charge');
+    const rho = getVal('Areal');
+    const pct = getVal('Percent');
+    const eff = getVal('Eff');
+    const r   = getVal('Radius');
+    const d   = getVal('Distance');
 
     if (Q === 0 || rho === 0 || pct === 0 || eff === 0) {
       showError('Q, areal density, mass %, and efficiency must all be non-zero.');
@@ -556,34 +676,96 @@
 
     document.getElementById('outDiff').innerHTML  = formatResult(diffCross);
     document.getElementById('outTotal').innerHTML = formatResult(totalCross);
+
+    /* ── Error propagation ── */
+
+    /* 1. dN: use user value if given, else sqrt(N) (Poisson) */
+    const dAreaEl  = document.getElementById('dArea');
+    const dAreaRaw = parseFloat(dAreaEl.value);
+    const dN = (!isNaN(dAreaRaw) && dAreaRaw >= 0) ? dAreaRaw : Math.sqrt(N);
+    /* Auto-fill placeholder with Poisson default */
+    if (isNaN(dAreaRaw)) dAreaEl.placeholder = '√N = ' + Math.sqrt(N).toFixed(1);
+
+    const dQ   = getErrVal('dCharge',   Q   * 0.01);   /* default 1% */
+    const dRho = getErrVal('dAreal',    rho * 0.01);   /* default 1% */
+    const dPct = getErrVal('dPercent',  pct * 0.01);   /* default 1% */
+    const dEff = getErrVal('dEff',      eff * 0.01);   /* default 1% */
+    const dr   = getErrVal('dRadius',   0.05);          /* default 0.05 cm */
+    const dd   = getErrVal('dDistance', 0.10);          /* default 0.10 cm */
+
+    /* Partial derivatives of Omega w.r.t. r and d */
+    const hyp = Math.sqrt(r * r + d * d);
+    const dOmega_dr = 2.0 * Math.PI * (d * r) / (hyp * hyp * hyp);
+    const dOmega_dd = -2.0 * Math.PI * (r * r) / (hyp * hyp * hyp);
+
+    const dOmega = Math.sqrt(
+      Math.pow(dOmega_dr * dr, 2) +
+      Math.pow(dOmega_dd * dd, 2)
+    );
+
+    /* Relative errors, added in quadrature */
+    const relSq =
+      Math.pow(dN  / N,          2) +
+      Math.pow(dQ  / Q,          2) +
+      Math.pow(dRho / rho,       2) +
+      Math.pow(dPct / pct,       2) +
+      Math.pow(dEff / eff,       2) +
+      Math.pow(dOmega / solidAngle, 2);
+
+    const relErr = Math.sqrt(relSq);
+
+    const dDiff  = diffCross  * relErr;
+    const dTotal = totalCross * relErr;
+
+    document.getElementById('outDiffErr').innerHTML =
+      '&plusmn; ' + formatResult(dDiff) +
+      ' <span style="font-size:12px;color:var(--text-dim)">(' + (relErr * 100).toFixed(1) + '%)</span>';
+    document.getElementById('outTotalErr').innerHTML =
+      '&plusmn; ' + formatResult(dTotal) +
+      ' <span style="font-size:12px;color:var(--text-dim)">(' + (relErr * 100).toFixed(1) + '%)</span>';
+  }
+
+  /* Return parsed error value; if blank/NaN use fallback */
+  function getErrVal(id, fallback) {
+    const v = parseFloat(document.getElementById(id).value);
+    return (!isNaN(v) && v >= 0) ? v : fallback;
   }
 
   function formatResult(val) {
     if (!isFinite(val)) return '<span class="result-placeholder">Error</span>';
-    const s = val.toPrecision(6);
-    // also show scientific notation if number is very large or very small
     const abs = Math.abs(val);
-    if (abs > 0 && (abs >= 1e6 || abs < 1e-3)) {
-      return val.toExponential(4) + ' <span style="font-size:13px;color:var(--text-muted)">(' + s + ')</span>';
+    if (abs > 0 && (abs >= 1e5 || abs < 0.01)) {
+      return val.toExponential(4);
     }
-    return s;
+    return val.toPrecision(5);
   }
 
   function clearAll() {
     const ids = ['Zproj','Aproj','Ztarget','Atarget','Charge','ChargeState',
-                 'Areal','Percent','Radius','Distance','Eff','Area'];
+                 'Areal','Percent','Radius','Distance','Eff','Area',
+                 'dCharge','dAreal','dPercent','dRadius','dDistance','dEff','dArea'];
     ids.forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('dArea').dataset.userEdited = '';
     document.getElementById('outDiff').innerHTML  = '<span class="result-placeholder">&#x2014;</span>';
     document.getElementById('outTotal').innerHTML = '<span class="result-placeholder">&#x2014;</span>';
+    document.getElementById('outDiffErr').innerHTML  = '';
+    document.getElementById('outTotalErr').innerHTML = '';
     hideError();
   }
 
-  // Allow Enter key to trigger calculation
   document.addEventListener('keydown', e => {
     if (e.key === 'Enter') calculate();
   });
 
-  // Auto-calculate on load with default values
+  /* Seed dArea default on first load */
+  (function seedDefaults() {
+    const n = parseFloat(document.getElementById('Area').value);
+    const dAreaEl = document.getElementById('dArea');
+    if (!isNaN(n) && n > 0) {
+      dAreaEl.value = Math.sqrt(n).toFixed(2);
+    }
+  })();
+
   window.addEventListener('load', calculate);
 </script>
 </body>
