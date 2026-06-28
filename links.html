@@ -19,6 +19,17 @@
       --border: rgba(78, 205, 196, 0.12);
     }
 
+    [data-theme="light"] {
+      --navy:   #f4f6fb;
+      --navy2:  #e8ecf4;
+      --teal:   #0ea5a0;
+      --orange: #d95220;
+      --slate:  #5a6478;
+      --white:  #1a1f2e;
+      --card:   #ffffff;
+      --border: rgba(14, 165, 160, 0.18);
+    }
+
     html { scroll-behavior: smooth; }
 
     body {
@@ -237,6 +248,29 @@
       opacity: 0.6;
     }
 
+    /* ── THEME TOGGLE ── */
+    .theme-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--slate);
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+    .theme-toggle:hover { color: var(--teal); border-color: var(--teal); }
+    .theme-toggle svg { width: 16px; height: 16px; pointer-events: none; }
+    .icon-sun, .icon-moon { display: none; }
+    [data-theme="light"] .icon-moon { display: block; }
+    [data-theme="light"] .icon-sun  { display: none; }
+    :not([data-theme="light"]) .icon-sun  { display: block; }
+    :not([data-theme="light"]) .icon-moon { display: none; }
+
     /* ── REDUCED MOTION ── */
     @media (prefers-reduced-motion: reduce) {
       .card { transition: none; }
@@ -250,7 +284,15 @@
 <div class="wrap">
   <nav>
     <a href="https://www.vranga.in/home" class="nav-logo">V. Ranga</a>
-
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+      </svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
   </nav>
 
   <div class="hero">
@@ -315,6 +357,9 @@ const SECTIONS = [
              <path d="M8 7h8M8 11h8M8 15h5"/>
            </svg>`,
     links: [
+      { name: 'NUPECC',       url: 'https://www.nupecc.org/?display=jobs' },
+      { name: 'Academic Jobs',url: 'https://academicjobsonline.org/ajo/NP'},
+      { name: 'Academic Positions', url: 'https://academicpositions.com/find-jobs?positions[0]=post-doc&fields[0]=physics&fields[1]=nuclear-physics&page=1'},
       { name: 'FRIB',       url: 'https://fribusers.org/nuclearmatters/#' },
       
       /* ADD NEW CALCULATORS HERE */
@@ -329,7 +374,7 @@ const SECTIONS = [
            </svg>`,
     links: [
       { name: 'Video Library',       url: 'https://rangavirender.github.io/site/video_library.html' },
-      
+      { name: 'Nuclear Data', url: 'https://www-nds.iaea.org/relnsd/vcharthtml/VChartHTML.html' }
       /* ADD NEW CALCULATORS HERE */
     ],
   }
@@ -364,6 +409,18 @@ const SECTIONS = [
       <div class="grid">${cards}</div>`;
 
     wrap.insertBefore(section, footer);
+  });
+})();
+
+/* ── Theme toggle ── */
+(function() {
+  const btn = document.getElementById('themeToggle');
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  btn.addEventListener('click', () => {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    document.documentElement.setAttribute('data-theme', isLight ? 'dark' : 'light');
+    localStorage.setItem('theme', isLight ? 'dark' : 'light');
   });
 })();
 
