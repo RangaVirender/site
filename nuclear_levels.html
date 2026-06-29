@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nuclear Level Scheme Viewer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 60%, #415a77 100%);
+      color: #e0e6f0;
+      padding: 22px 32px;
+    }
+    header h1 { font-size: 1.7rem; font-weight: 700; letter-spacing: 0.03em; }
+    header p  { font-size: 0.9rem; margin-top: 4px; color: #a8b8cc; }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      background: #fff;
+      padding: 16px 32px;
+      border-bottom: 2px solid #dde3ec;
+      box-shadow: 0 2px 6px rgba(0,0,0,.06);
+    }
+
+    .ctrl-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ctrl-group label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #415a77;
+      white-space: nowrap;
+    }
+    .ctrl-group input {
+      border: 1.5px solid #b0bec5;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.95rem;
+      width: 90px;
+      transition: border-color .2s;
+    }
+    .ctrl-group input:focus {
+      outline: none;
+      border-color: #1b6ca8;
+    }
+    #elemInput { width: 70px; text-transform: uppercase; }
+
+    button#drawBtn {
+      background: #1b6ca8;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 22px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    button#drawBtn:hover { background: #154f7c; }
+
+    #status {
+      padding: 8px 32px;
+      font-size: 0.88rem;
+      min-height: 30px;
+      color: #555;
+    }
+    #status.error { color: #c0392b; font-weight: 600; }
+    #status.info  { color: #2471a3; }
+
+    #svgWrap {
+      overflow-x: auto;
+      padding: 8px 24px 24px;
+    }
+    #svgWrap svg {
+      display: block;
+      background: #fff;
+      border: 1px solid #d0d8e4;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    }
+
+    .legend {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      align-items: center;
+      padding: 10px 32px 20px;
+      font-size: 0.82rem;
+      color: #555;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .legend-swatch {
+      width: 28px;
+      height: 4px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Nuclear Level Scheme Viewer</h1>
+  <p>ENSDF Database &mdash; Adopted Levels &amp; Gammas (A = 1 – 30)</p>
+</header>
+
+<div class="controls">
+  <div class="ctrl-group">
+    <label for="massInput">Mass number A:</label>
+    <input type="number" id="massInput" min="1" max="30" value="20">
+  </div>
+  <div class="ctrl-group">
+    <label for="elemInput">Element symbol:</label>
+    <input type="text" id="elemInput" value="NE" maxlength="2" placeholder="e.g. NE">
+  </div>
+  <button id="drawBtn" onclick="drawScheme()">Draw Level Scheme</button>
+</div>
+
+<div id="status"></div>
+<div id="svgWrap"></div>
+
+<div class="legend">
+  <span style="font-weight:600; color:#333;">Transition type:</span>
+  <div class="legend-item"><div class="legend-swatch" style="background:#1565C0"></div> E2</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#C62828"></div> M1</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#2E7D32"></div> E1</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#6A1B9A"></div> M1+E2 / mixed</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#00838F"></div> E3 / M2</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#757575"></div> unknown</div>
+  <div class="legend-item" style="margin-left:12px;">
+    <svg width="28" height="12"><line x1="2" y1="6" x2="26" y2="6" stroke="#555" stroke-width="1.5" stroke-dasharray="4,3"/></svg>
+    uncertain
+  </div>
+</div>
+
+<script>
+// ── Configuration ──────────────────────────────────────────────────────────
+const DATA_BASE = 'nuclear_level_data';   // path relative to this HTML file
+
+// ── Multipolarity colour map ───────────────────────────────────────────────
+function multipolarityColor(m) {
+  if (!m) return '#757575';
+  const mu = m.toUpperCase().replace(/[\[\]\s]/g, '');
+  if (mu === 'E2') return '#1565C0';
+  if (mu === 'M1') return '#C62828';
+  if (mu === 'E1') return '#2E7D32';
+  if (mu.includes('M1') && mu.includes('E2')) return '#6A1B9A';
+  if (mu === 'E3' || mu === 'M2') return '#00838F';
+  if (mu.startsWith('E')) return '#1565C0';
+  if (mu.startsWith('M')) return '#C62828';
+  return '#757575';
+}
+
+// ── ENSDF parser ───────────────────────────────────────────────────────────
+function parseENSDF(text, element, A) {
+  const lines = text.split('\n');
+  const a_str = String(A).padStart(3, ' ');
+  const el_str = element.toUpperCase().padEnd(2, ' ');
+  const nucid = a_str + el_str;   // e.g., " 20NE" or "100SR" or "  1H "
+
+  let inAdopted = false;
+  const levels = [];
+  const gammas = [];
+  let currentLevel = null;
+
+  for (const line of lines) {
+    if (line.length < 8) {
+      if (inAdopted) break;
+      continue;
+    }
+
+    const lineNucid = line.substring(0, 5);
+    if (lineNucid !== nucid) {
+      if (inAdopted) break;   // moved past our nucleus block
+      continue;
+    }
+
+    const cont    = line[5];            // blank = primary; digit/letter = continuation
+    const recType = line.length > 7 ? line[7] : ' ';
+
+    // Dataset header: cont=' ', recType=' ', text starts after col 8
+    if (cont === ' ' && recType === ' ') {
+      const dsName = line.substring(8).trim().replace(/\s{2,}.*/, '').trim();
+      if (dsName.startsWith('ADOPTED LEVELS')) {
+        inAdopted = true;
+        currentLevel = null;
+        levels.length = 0;
+        gammas.length = 0;
+        continue;
+      } else if (inAdopted) {
+        break;   // another dataset for this nucleus — stop
+      }
+      continue;
+    }
+
+    if (!inAdopted) continue;
+    if (cont !== ' ') continue;   // skip continuation lines
+
+    if (recType === 'L') {
+      // Fixed columns (0-indexed): E[8:19], DE[19:21], J[21:39], T[39:49]
+      const e_raw  = line.substring(8, 19).trim();
+      const j_raw  = line.substring(21, 39).trim();
+      const t_raw  = line.substring(39, 49).trim();
+
+      const energy = parseFloat(e_raw);
+      if (isNaN(energy)) continue;
+
+      currentLevel = {
+        energy,
+        jpi:      j_raw || '',
+        halflife: t_raw || '',
+      };
+      levels.push(currentLevel);
+
+    } else if (recType === 'G' && currentLevel) {
+      // Fixed columns: Eg[8:19], dEg[19:21], RI[21:29], dRI[29:31], M[31:41]
+      const eg_raw = line.substring(8, 19).trim();
+      const ri_raw = line.substring(21, 29).trim();
+      const m_raw  = line.substring(31, 41).trim();
+      const uncertain = line.length >= 80 && line[79] === '?';
+
+      const eg = parseFloat(eg_raw);
+      if (isNaN(eg)) continue;
+
+      const ri = parseFloat(ri_raw);
+
+      gammas.push({
+        from:          currentLevel.energy,
+        eg,
+        intensity:     isNaN(ri) ? null : ri,
+        multipolarity: m_raw,
+        uncertain,
+        to:            null,   // resolved below
+      });
+    }
+  }
+
+  // Resolve gamma targets (lower level at energy ≈ from − eg)
+  const TOLERANCE = 20;   // keV
+  for (const g of gammas) {
+    const target = g.from - g.eg;
+    let best = null, bestDiff = Infinity;
+    for (const lv of levels) {
+      if (lv.energy >= g.from - 0.5) continue;   // must go down
+      const diff = Math.abs(lv.energy - target);
+      if (diff < bestDiff) { bestDiff = diff; best = lv; }
+    }
+    g.to = (best && bestDiff <= TOLERANCE) ? best.energy : null;
+  }
+
+  return { levels, gammas, nucid: nucid.trim() };
+}
+
+// ── Format helpers ─────────────────────────────────────────────────────────
+function fmtEnergy(e) {
+  if (e === 0) return '0';
+  if (e >= 10) return e.toFixed(1);
+  return e.toPrecision(4);
+}
+
+function fmtHalflife(t) {
+  if (!t) return '';
+  const s = t.trim();
+  if (!s) return '';
+  if (s.toUpperCase() === 'STABLE') return 'stable';
+  // Try to detect "VALUE UNIT" e.g. "200 MS"
+  const parts = s.split(/\s+/);
+  if (parts.length >= 2) return `${parts[0]} ${parts[1]}`;
+  return s;
+}
+
+// ── SVG renderer ───────────────────────────────────────────────────────────
+function renderLevelScheme(container, isotopeLabel, levels, gammas) {
+  if (levels.length === 0) {
+    container.innerHTML = '<p style="padding:24px;color:#c0392b;font-weight:600;">No levels found for this isotope in the ADOPTED LEVELS section.</p>';
+    return;
+  }
+
+  // --- Layout constants ---
+  const W = 960, H = Math.max(600, levels.length * 22 + 140);
+  const PAD_TOP    = 70;
+  const PAD_BOTTOM = 50;
+  const PAD_LEFT   = 80;
+  const PAD_RIGHT  = 270;
+  const PLOT_H = H - PAD_TOP - PAD_BOTTOM;
+
+  // Level line x range
+  const LX1 = PAD_LEFT + 20;
+  const LX2 = W - PAD_RIGHT - 10;
+
+  const maxEnergy = Math.max(...levels.map(l => l.energy));
+  const eScale = maxEnergy > 0 ? PLOT_H / (maxEnergy * 1.08) : 1;
+
+  function yE(e) {
+    return PAD_TOP + PLOT_H - e * eScale;
+  }
+
+  // Gather unique multipolarity colours for markers
+  const colors = new Set(gammas.map(g => multipolarityColor(g.multipolarity)));
+  colors.add('#757575');
+
+  // Build marker defs
+  let defs = '<defs>';
+  for (const c of colors) {
+    const id = 'arr_' + c.replace('#', '');
+    defs += `<marker id="${id}" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="${c}"/>
+    </marker>`;
+  }
+  defs += '</defs>';
+
+  // ---- Draw elements ----
+  let svgContent = '';
+
+  // Background title
+  svgContent += `<rect x="0" y="0" width="${W}" height="${PAD_TOP - 6}" fill="#1b263b" rx="8" ry="8"/>`;
+  svgContent += `<rect x="0" y="${PAD_TOP - 14}" width="${W}" height="14" fill="#1b263b"/>`;
+  svgContent += `<text x="${W/2}" y="34" text-anchor="middle" font-family="serif" font-size="22" font-weight="bold" fill="#e0e6f0">${isotopeLabel} — Nuclear Level Scheme</text>`;
+  svgContent += `<text x="${W/2}" y="56" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8ba4be">Adopted Levels &amp; Gammas (ENSDF)</text>`;
+
+  // Energy axis
+  const axX = PAD_LEFT - 10;
+  svgContent += `<line x1="${axX}" y1="${PAD_TOP}" x2="${axX}" y2="${PAD_TOP + PLOT_H}" stroke="#666" stroke-width="1.5"/>`;
+  // Axis label
+  svgContent += `<text transform="rotate(-90,18,${PAD_TOP + PLOT_H/2})" x="0" y="0" text-anchor="middle" font-size="12" fill="#444" font-family="sans-serif">Energy (keV)</text>`;
+
+  // Axis ticks
+  const tickStep = chooseTick(maxEnergy);
+  for (let e = 0; e <= maxEnergy * 1.05; e += tickStep) {
+    const y = yE(e);
+    svgContent += `<line x1="${axX - 5}" y1="${y}" x2="${axX}" y2="${y}" stroke="#666" stroke-width="1"/>`;
+    svgContent += `<text x="${axX - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#555" font-family="sans-serif">${Math.round(e)}</text>`;
+    // Grid line (light)
+    svgContent += `<line x1="${axX}" y1="${y}" x2="${LX2}" y2="${y}" stroke="#e8eaf0" stroke-width="0.5"/>`;
+  }
+
+  // ---- Gamma arrows ----
+  // Group gammas by source level
+  const gammaByLevel = {};
+  for (const g of gammas) {
+    if (g.to === null) continue;
+    const key = g.from.toFixed(3);
+    if (!gammaByLevel[key]) gammaByLevel[key] = [];
+    gammaByLevel[key].push(g);
+  }
+
+  // Assign x positions per level group
+  const arrowXMap = new Map();
+  const ARROW_X1 = LX1 + 30;
+  const ARROW_X2 = LX2 - 20;
+  const ARROW_RANGE = ARROW_X2 - ARROW_X1;
+
+  for (const [key, glist] of Object.entries(gammaByLevel)) {
+    // Sort by intensity descending
+    glist.sort((a, b) => (b.intensity || 0) - (a.intensity || 0));
+    const n = glist.length;
+    for (let i = 0; i < n; i++) {
+      const xPos = n === 1
+        ? ARROW_X1 + ARROW_RANGE / 2
+        : ARROW_X1 + (i + 0.5) * ARROW_RANGE / n;
+      arrowXMap.set(g => g === glist[i], xPos);
+      glist[i]._x = xPos;
+    }
+  }
+
+  // Max intensity for stroke-width scaling
+  const allRI = gammas.filter(g => g.intensity != null).map(g => g.intensity);
+  const maxRI = allRI.length > 0 ? Math.max(...allRI) : 100;
+
+  // Draw gamma arrows
+  for (const g of gammas) {
+    if (g.to === null) continue;
+    const x   = g._x;
+    const yFrom = yE(g.from);
+    const yTo   = yE(g.to);
+    const col   = multipolarityColor(g.multipolarity);
+    const markId = 'arr_' + col.replace('#', '');
+    const sw = 1 + ((g.intensity || 50) / maxRI) * 2.5;
+    const dash = g.uncertain ? '5,3' : '';
+
+    // Arrow line (shorten top end slightly so it starts from level line)
+    svgContent += `<g>`;
+    svgContent += `<line x1="${x}" y1="${yFrom}" x2="${x}" y2="${yTo + 8}"
+      stroke="${col}" stroke-width="${sw.toFixed(1)}"
+      ${dash ? `stroke-dasharray="${dash}"` : ''}
+      marker-end="url(#${markId})"/>`;
+
+    // Gamma label (rotated, only if enough space)
+    const arrowLen = yFrom - yTo;
+    if (arrowLen > 20) {
+      const midY = (yFrom + yTo) / 2;
+      const label = `${fmtEnergy(g.eg)} keV${g.intensity != null ? ' (' + Math.round(g.intensity) + '%)' : ''}`;
+      svgContent += `<text transform="rotate(-90,${x + 4},${midY})"
+        x="${x + 4}" y="${midY}"
+        text-anchor="middle" dominant-baseline="auto"
+        font-size="9" fill="${col}" font-family="sans-serif">${label}</text>`;
+    }
+
+    // Native tooltip
+    const tip = `Eγ = ${fmtEnergy(g.eg)} keV  RI = ${g.intensity != null ? g.intensity : '?'}  M = ${g.multipolarity || '?'}${g.uncertain ? '  (uncertain placement)' : ''}`;
+    svgContent += `<title>${escapeXml(tip)}</title></g>`;
+  }
+
+  // ---- Energy levels ----
+  // Track y positions of labels to avoid overlap
+  let lastLabelY = -999;
+
+  // Sort levels by energy
+  const sortedLevels = [...levels].sort((a, b) => a.energy - b.energy);
+
+  for (const lv of sortedLevels) {
+    const y = yE(lv.energy);
+
+    // Level line
+    const isGS = lv.energy === 0;
+    svgContent += `<g>`;
+    svgContent += `<line x1="${LX1}" y1="${y}" x2="${LX2}" y2="${y}"
+      stroke="${isGS ? '#222' : '#333'}" stroke-width="${isGS ? 2 : 1.5}"/>`;
+
+    // Right-side label: Jπ  energy keV  halflife
+    const labelX = LX2 + 8;
+    let labelY = y + 4;   // vertically centred on line
+    if (labelY - lastLabelY < 13) labelY = lastLabelY + 13;
+    lastLabelY = labelY;
+
+    // Small connector from line to label if offset
+    if (Math.abs(labelY - y) > 6) {
+      svgContent += `<line x1="${LX2}" y1="${y}" x2="${labelX - 2}" y2="${labelY}"
+        stroke="#aaa" stroke-width="0.5"/>`;
+    }
+
+    const jpiStr  = lv.jpi  ? `${lv.jpi}` : '';
+    const hlStr   = fmtHalflife(lv.halflife);
+
+    svgContent += `<text x="${labelX}" y="${labelY - 1}" font-family="serif" font-size="11.5" fill="#1a1a2e">`;
+    if (jpiStr) svgContent += `<tspan font-style="italic" font-weight="bold">${escapeXml(jpiStr)}</tspan> `;
+    svgContent += `<tspan font-family="sans-serif" font-size="10" fill="#444">${fmtEnergy(lv.energy)}</tspan>`;
+    if (hlStr)  svgContent += ` <tspan font-family="sans-serif" font-size="9.5" fill="#777">${escapeXml(hlStr)}</tspan>`;
+    svgContent += `</text>`;
+
+    svgContent += `<title>${escapeXml(`E = ${lv.energy} keV   Jπ = ${lv.jpi || '?'}   T½ = ${fmtHalflife(lv.halflife) || '?'}`)}</title>`;
+    svgContent += `</g>`;
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${defs}${svgContent}</svg>`;
+  container.innerHTML = svg;
+}
+
+function chooseTick(maxE) {
+  const raw = maxE / 5;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const steps = [1, 2, 2.5, 5, 10];
+  for (const s of steps) {
+    if (s * mag >= raw) return s * mag;
+  }
+  return mag * 10;
+}
+
+function escapeXml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Main entry point ───────────────────────────────────────────────────────
+async function drawScheme() {
+  const statusEl = document.getElementById('status');
+  const svgWrap  = document.getElementById('svgWrap');
+
+  const A = parseInt(document.getElementById('massInput').value, 10);
+  const element = document.getElementById('elemInput').value.trim();
+
+  if (!element || isNaN(A) || A < 1 || A > 300) {
+    statusEl.className = 'error';
+    statusEl.textContent = 'Please enter a valid mass number (1–300) and element symbol.';
+    return;
+  }
+
+  const paddedA  = String(A).padStart(3, '0');
+  const url      = `${DATA_BASE}/ensdf.${paddedA}`;
+  const isoLabel = `<sup>${A}</sup>${element.charAt(0).toUpperCase() + element.slice(1).toLowerCase()}`;
+
+  statusEl.className = 'info';
+  statusEl.textContent = `Loading ${url} …`;
+  svgWrap.innerHTML = '';
+
+  let text;
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      statusEl.className = 'error';
+      statusEl.textContent = `Data file not available for A = ${A} (HTTP ${resp.status}). Only files up to A = 30 are currently uploaded.`;
+      return;
+    }
+    text = await resp.text();
+  } catch (err) {
+    statusEl.className = 'error';
+    statusEl.textContent = `Failed to fetch data: ${err.message}. Make sure you are serving this page over HTTP (not file://).`;
+    return;
+  }
+
+  const { levels, gammas } = parseENSDF(text, element, A);
+
+  if (levels.length === 0) {
+    statusEl.className = 'error';
+    statusEl.textContent = `No adopted levels found for ${element.toUpperCase()}-${A}. Check that the element symbol is correct.`;
+    return;
+  }
+
+  const nGammas = gammas.filter(g => g.to !== null).length;
+  statusEl.className = '';
+  statusEl.textContent = `${element.toUpperCase()}-${A}: ${levels.length} level${levels.length !== 1 ? 's' : ''}, ${nGammas} gamma transition${nGammas !== 1 ? 's' : ''} with resolved placements.`;
+
+  // Build isotope label for SVG (plain text version)
+  const isoPlain = `${A}${element.charAt(0).toUpperCase() + element.slice(1).toLowerCase()}`;
+  renderLevelScheme(svgWrap, isoPlain, levels, gammas);
+}
+
+// Draw on Enter key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') drawScheme();
+});
+</script>
+</body>
+</html>
