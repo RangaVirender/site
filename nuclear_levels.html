@@ -44,19 +44,22 @@
       color: #415a77;
       white-space: nowrap;
     }
-    .ctrl-group input {
+    .ctrl-group input, .ctrl-group select {
       border: 1.5px solid #b0bec5;
       border-radius: 6px;
       padding: 6px 10px;
       font-size: 0.95rem;
-      width: 90px;
       transition: border-color .2s;
+      background: #fff;
     }
-    .ctrl-group input:focus {
+    .ctrl-group input:focus, .ctrl-group select:focus {
       outline: none;
       border-color: #1b6ca8;
     }
-    #elemInput { width: 70px; text-transform: uppercase; }
+    #massInput { width: 80px; }
+    #elemSelect { min-width: 130px; }
+    #maxLevels { width: 80px; }
+    #elemSelect:disabled { color: #999; background: #f4f4f4; }
 
     button#drawBtn {
       background: #1b6ca8;
@@ -123,11 +126,17 @@
 <div class="controls">
   <div class="ctrl-group">
     <label for="massInput">Mass number A:</label>
-    <input type="number" id="massInput" min="1" max="30" value="20">
+    <input type="number" id="massInput" min="1" max="300" value="20">
   </div>
   <div class="ctrl-group">
-    <label for="elemInput">Element symbol:</label>
-    <input type="text" id="elemInput" value="NE" maxlength="2" placeholder="e.g. NE">
+    <label for="elemSelect">Element:</label>
+    <select id="elemSelect" disabled>
+      <option value="">— enter A first —</option>
+    </select>
+  </div>
+  <div class="ctrl-group">
+    <label for="maxLevels">Max levels:</label>
+    <input type="number" id="maxLevels" min="1" value="30" placeholder="all">
   </div>
   <button id="drawBtn" onclick="drawScheme()">Draw Level Scheme</button>
 </div>
@@ -152,6 +161,79 @@
 <script>
 // ── Configuration ──────────────────────────────────────────────────────────
 const DATA_BASE = 'nuclear_level_data';   // path relative to this HTML file
+
+// Simple cache: { A -> { text, elements[] } }
+const fileCache = {};
+
+// ── Scan file for available nuclei in the ADOPTED LEVELS sections ──────────
+function scanAvailableElements(text, A) {
+  const a_str = String(A).padStart(3, ' ');
+  const found = [];
+  for (const line of text.split('\n')) {
+    if (line.length < 8) continue;
+    if (line.substring(0, 3) !== a_str) continue;
+    if (line[5] !== ' ' || line[7] !== ' ') continue;   // must be primary dataset header
+    const ds = line.substring(8).trim();
+    if (!ds.startsWith('ADOPTED LEVELS')) continue;
+    const el = line.substring(3, 5).trim();
+    if (el && !found.includes(el)) found.push(el);
+  }
+  return found.sort((a, b) => a.localeCompare(b));
+}
+
+// ── Populate element dropdown when A changes ───────────────────────────────
+async function onMassChange() {
+  const sel     = document.getElementById('elemSelect');
+  const statusEl = document.getElementById('status');
+  const A = parseInt(document.getElementById('massInput').value, 10);
+
+  sel.disabled = true;
+  sel.innerHTML = '<option value="">Loading…</option>';
+
+  if (isNaN(A) || A < 1 || A > 300) {
+    sel.innerHTML = '<option value="">Invalid A</option>';
+    return;
+  }
+
+  const paddedA = String(A).padStart(3, '0');
+  const url = `${DATA_BASE}/ensdf.${paddedA}`;
+
+  try {
+    let text;
+    if (fileCache[A]) {
+      text = fileCache[A].text;
+    } else {
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        sel.innerHTML = `<option value="">No data for A=${A}</option>`;
+        statusEl.className = 'error';
+        statusEl.textContent = `Data file not available for A = ${A}.`;
+        return;
+      }
+      text = await resp.text();
+      fileCache[A] = { text, elements: null };
+    }
+
+    const elements = scanAvailableElements(text, A);
+    fileCache[A].elements = elements;
+
+    if (elements.length === 0) {
+      sel.innerHTML = '<option value="">No adopted levels found</option>';
+      return;
+    }
+
+    sel.innerHTML = elements
+      .map(el => `<option value="${el}">${el} (${A}${el.charAt(0) + el.slice(1).toLowerCase()})</option>`)
+      .join('');
+    sel.disabled = false;
+    statusEl.className = '';
+    statusEl.textContent = `${elements.length} isotope${elements.length !== 1 ? 's' : ''} available for A = ${A}.`;
+  } catch (err) {
+    sel.innerHTML = '<option value="">Fetch error</option>';
+    statusEl.className = 'error';
+    statusEl.textContent = `Error loading file: ${err.message}`;
+  }
+}
 
 // ── Multipolarity colour map ───────────────────────────────────────────────
 function multipolarityColor(m) {
@@ -482,61 +564,83 @@ function escapeXml(s) {
 
 // ── Main entry point ───────────────────────────────────────────────────────
 async function drawScheme() {
-  const statusEl = document.getElementById('status');
-  const svgWrap  = document.getElementById('svgWrap');
+  const statusEl  = document.getElementById('status');
+  const svgWrap   = document.getElementById('svgWrap');
+  const A         = parseInt(document.getElementById('massInput').value, 10);
+  const element   = document.getElementById('elemSelect').value.trim();
+  const maxLevRaw = parseInt(document.getElementById('maxLevels').value, 10);
+  const maxLev    = isNaN(maxLevRaw) || maxLevRaw < 1 ? Infinity : maxLevRaw;
 
-  const A = parseInt(document.getElementById('massInput').value, 10);
-  const element = document.getElementById('elemInput').value.trim();
-
-  if (!element || isNaN(A) || A < 1 || A > 300) {
+  if (!element) {
     statusEl.className = 'error';
-    statusEl.textContent = 'Please enter a valid mass number (1–300) and element symbol.';
+    statusEl.textContent = 'Please select an element from the dropdown (load a mass number first).';
+    return;
+  }
+  if (isNaN(A) || A < 1 || A > 300) {
+    statusEl.className = 'error';
+    statusEl.textContent = 'Please enter a valid mass number (1–300).';
     return;
   }
 
-  const paddedA  = String(A).padStart(3, '0');
-  const url      = `${DATA_BASE}/ensdf.${paddedA}`;
-  const isoLabel = `<sup>${A}</sup>${element.charAt(0).toUpperCase() + element.slice(1).toLowerCase()}`;
-
-  statusEl.className = 'info';
-  statusEl.textContent = `Loading ${url} …`;
+  const paddedA = String(A).padStart(3, '0');
+  const url     = `${DATA_BASE}/ensdf.${paddedA}`;
   svgWrap.innerHTML = '';
 
   let text;
   try {
-    const resp = await fetch(url);
-    if (!resp.ok) {
-      statusEl.className = 'error';
-      statusEl.textContent = `Data file not available for A = ${A} (HTTP ${resp.status}). Only files up to A = 30 are currently uploaded.`;
-      return;
+    if (fileCache[A]) {
+      text = fileCache[A].text;
+    } else {
+      statusEl.className = 'info';
+      statusEl.textContent = `Loading ${url} …`;
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        statusEl.className = 'error';
+        statusEl.textContent = `Data file not available for A = ${A} (HTTP ${resp.status}).`;
+        return;
+      }
+      text = await resp.text();
+      fileCache[A] = { text, elements: null };
     }
-    text = await resp.text();
   } catch (err) {
     statusEl.className = 'error';
-    statusEl.textContent = `Failed to fetch data: ${err.message}. Make sure you are serving this page over HTTP (not file://).`;
+    statusEl.textContent = `Failed to fetch data: ${err.message}. Serve this page over HTTP, not file://.`;
     return;
   }
 
-  const { levels, gammas } = parseENSDF(text, element, A);
+  let { levels, gammas } = parseENSDF(text, element, A);
 
   if (levels.length === 0) {
     statusEl.className = 'error';
-    statusEl.textContent = `No adopted levels found for ${element.toUpperCase()}-${A}. Check that the element symbol is correct.`;
+    statusEl.textContent = `No adopted levels found for ${element}-${A}.`;
     return;
   }
 
-  const nGammas = gammas.filter(g => g.to !== null).length;
-  statusEl.className = '';
-  statusEl.textContent = `${element.toUpperCase()}-${A}: ${levels.length} level${levels.length !== 1 ? 's' : ''}, ${nGammas} gamma transition${nGammas !== 1 ? 's' : ''} with resolved placements.`;
+  // Apply max-levels limit: keep lowest N by energy
+  const totalLevels = levels.length;
+  if (maxLev < totalLevels) {
+    const sorted = [...levels].sort((a, b) => a.energy - b.energy);
+    const kept   = new Set(sorted.slice(0, maxLev).map(l => l.energy));
+    levels  = levels.filter(l => kept.has(l.energy));
+    gammas  = gammas.filter(g => kept.has(g.from) && (g.to === null || kept.has(g.to)));
+  }
 
-  // Build isotope label for SVG (plain text version)
-  const isoPlain = `${A}${element.charAt(0).toUpperCase() + element.slice(1).toLowerCase()}`;
+  const nGammas = gammas.filter(g => g.to !== null).length;
+  const truncNote = maxLev < totalLevels ? ` (showing lowest ${maxLev} of ${totalLevels})` : '';
+  statusEl.className = '';
+  statusEl.textContent = `${element}-${A}: ${levels.length} level${levels.length !== 1 ? 's' : ''}${truncNote}, ${nGammas} gamma transition${nGammas !== 1 ? 's' : ''} placed.`;
+
+  const isoPlain = `${A}${element.charAt(0) + element.slice(1).toLowerCase()}`;
   renderLevelScheme(svgWrap, isoPlain, levels, gammas);
 }
 
-// Draw on Enter key
+// Wire up mass-number field to auto-populate element dropdown
+document.getElementById('massInput').addEventListener('change', onMassChange);
+document.getElementById('massInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') onMassChange();
+});
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter') drawScheme();
+  if (e.key === 'Enter' && document.activeElement.id !== 'massInput') drawScheme();
 });
 </script>
 </body>
