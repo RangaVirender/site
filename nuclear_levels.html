@@ -375,11 +375,11 @@ function renderLevelScheme(container, isotopeLabel, levels, gammas) {
   }
 
   // --- Layout constants ---
-  const W = 960, H = Math.max(600, levels.length * 22 + 140);
+  const W = 1060, H = Math.max(600, levels.length * 26 + 140);
   const PAD_TOP    = 70;
   const PAD_BOTTOM = 50;
-  const PAD_LEFT   = 80;
-  const PAD_RIGHT  = 270;
+  const PAD_LEFT   = 100;
+  const PAD_RIGHT  = 280;
   const PLOT_H = H - PAD_TOP - PAD_BOTTOM;
 
   // Level line x range
@@ -500,41 +500,80 @@ function renderLevelScheme(container, isotopeLabel, levels, gammas) {
   }
 
   // ---- Energy levels ----
-  // Track y positions of labels to avoid overlap
-  let lastLabelY = -999;
-
-  // Sort levels by energy
+  // Sort levels by energy ascending (ground state first = largest SVG y)
   const sortedLevels = [...levels].sort((a, b) => a.energy - b.energy);
 
+  // Pre-compute right-label blocks with overlap avoidance
+  // Each block: { lv, blockTop, blockBottom, lines[] }
+  const LABEL_LINE_H = 15;   // px per text line
+  const LABEL_GAP    = 5;    // min gap between consecutive label blocks
+  const labelBlocks  = [];
+
+  // Pass 1: assign ideal positions (centered on level line, iterate bottom→top)
   for (const lv of sortedLevels) {
-    const y = yE(lv.energy);
+    const y      = yE(lv.energy);
+    const jpiStr = lv.jpi ? lv.jpi : '';
+    const hlStr  = fmtHalflife(lv.halflife);
+    const lines  = [];
+    if (jpiStr) lines.push({ text: jpiStr, type: 'jpi' });
+    lines.push({ text: `${fmtEnergy(lv.energy)} keV`, type: 'energy' });
+    if (hlStr)  lines.push({ text: hlStr, type: 'hl' });
+    const blockH    = lines.length * LABEL_LINE_H;
+    const blockTop  = y - blockH / 2;
+    labelBlocks.push({ lv, y, lines, blockH, blockTop, blockBottom: blockTop + blockH });
+  }
+
+  // Pass 2: resolve upward collisions (iterate bottom→top = ascending index)
+  for (let i = 1; i < labelBlocks.length; i++) {
+    const prev = labelBlocks[i - 1];   // lower block (larger y)
+    const cur  = labelBlocks[i];
+    // "above" means smaller y — cur must have blockBottom < prev.blockTop - gap
+    if (cur.blockBottom > prev.blockTop - LABEL_GAP) {
+      cur.blockBottom = prev.blockTop - LABEL_GAP;
+      cur.blockTop    = cur.blockBottom - cur.blockH;
+    }
+  }
+
+  // Render
+  for (const { lv, y, lines, blockTop } of labelBlocks) {
+    const isGS = lv.energy === 0;
+
+    svgContent += `<g>`;
 
     // Level line
-    const isGS = lv.energy === 0;
-    svgContent += `<g>`;
     svgContent += `<line x1="${LX1}" y1="${y}" x2="${LX2}" y2="${y}"
-      stroke="${isGS ? '#222' : '#333'}" stroke-width="${isGS ? 2 : 1.5}"/>`;
+      stroke="${isGS ? '#111' : '#333'}" stroke-width="${isGS ? 2.5 : 1.5}"/>`;
 
-    // Right-side label: Jπ  energy keV  halflife
-    const labelX = LX2 + 8;
-    let labelY = y + 4;   // vertically centred on line
-    if (labelY - lastLabelY < 13) labelY = lastLabelY + 13;
-    lastLabelY = labelY;
+    // LEFT side: energy value (always at exact y, right-aligned before level line)
+    svgContent += `<text x="${LX1 - 7}" y="${y + 3.5}" text-anchor="end"
+      font-family="sans-serif" font-size="9.5" fill="#555">${fmtEnergy(lv.energy)}</text>`;
 
-    // Small connector from line to label if offset
-    if (Math.abs(labelY - y) > 6) {
-      svgContent += `<line x1="${LX2}" y1="${y}" x2="${labelX - 2}" y2="${labelY}"
-        stroke="#aaa" stroke-width="0.5"/>`;
+    // RIGHT side: label block
+    const labelX  = LX2 + 10;
+    const midLabelY = blockTop + lines.length * LABEL_LINE_H / 2;
+
+    // Connector line from level line to label mid if significantly offset
+    if (Math.abs(midLabelY - y) > 8) {
+      svgContent += `<line x1="${LX2}" y1="${y}" x2="${labelX - 3}" y2="${midLabelY}"
+        stroke="#bbb" stroke-width="0.7"/>`;
     }
 
-    const jpiStr  = lv.jpi  ? `${lv.jpi}` : '';
-    const hlStr   = fmtHalflife(lv.halflife);
-
-    svgContent += `<text x="${labelX}" y="${labelY - 1}" font-family="serif" font-size="11.5" fill="#1a1a2e">`;
-    if (jpiStr) svgContent += `<tspan font-style="italic" font-weight="bold">${escapeXml(jpiStr)}</tspan> `;
-    svgContent += `<tspan font-family="sans-serif" font-size="10" fill="#444">${fmtEnergy(lv.energy)}</tspan>`;
-    if (hlStr)  svgContent += ` <tspan font-family="sans-serif" font-size="9.5" fill="#777">${escapeXml(hlStr)}</tspan>`;
-    svgContent += `</text>`;
+    // Draw each text line
+    let lineY = blockTop + LABEL_LINE_H - 2;   // first baseline
+    for (const ln of lines) {
+      if (ln.type === 'jpi') {
+        svgContent += `<text x="${labelX}" y="${lineY}"
+          font-family="serif" font-size="13" font-style="italic" font-weight="bold"
+          fill="#1a1a2e">${escapeXml(ln.text)}</text>`;
+      } else if (ln.type === 'energy') {
+        svgContent += `<text x="${labelX}" y="${lineY}"
+          font-family="sans-serif" font-size="10.5" fill="#333">${escapeXml(ln.text)}</text>`;
+      } else {
+        svgContent += `<text x="${labelX}" y="${lineY}"
+          font-family="sans-serif" font-size="10" fill="#777">${escapeXml(ln.text)}</text>`;
+      }
+      lineY += LABEL_LINE_H;
+    }
 
     svgContent += `<title>${escapeXml(`E = ${lv.energy} keV   Jπ = ${lv.jpi || '?'}   T½ = ${fmtHalflife(lv.halflife) || '?'}`)}</title>`;
     svgContent += `</g>`;
