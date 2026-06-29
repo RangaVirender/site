@@ -84,15 +84,59 @@
     #status.info  { color: #2471a3; }
 
     #svgWrap {
-      overflow-x: auto;
-      padding: 8px 24px 24px;
+      position: relative;
+      overflow: hidden;
+      padding: 0 24px 24px;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
     }
+    #svgWrap.dragging { cursor: grabbing; }
     #svgWrap svg {
       display: block;
       background: #fff;
       border: 1px solid #d0d8e4;
       border-radius: 8px;
       box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    }
+
+    #zoom-bar {
+      display: none;
+      position: absolute;
+      top: 12px;
+      right: 38px;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      z-index: 10;
+    }
+    .zoom-btn {
+      background: rgba(27,99,168,0.82);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      width: 30px; height: 30px;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .zoom-btn:hover { background: #154f7c; }
+    #zoom-indicator {
+      font-size: 0.78rem;
+      color: #555;
+      background: rgba(255,255,255,.85);
+      border-radius: 4px;
+      padding: 1px 5px;
+      min-width: 40px;
+      text-align: center;
+    }
+    #zoom-hint {
+      font-size: 0.78rem;
+      color: #888;
+      padding: 0 24px 10px;
+      display: none;
     }
 
     .legend {
@@ -142,7 +186,15 @@
 </div>
 
 <div id="status"></div>
-<div id="svgWrap"></div>
+<div id="svgWrap">
+  <div id="zoom-bar">
+    <button class="zoom-btn" id="btn-zoom-in"  title="Zoom in">+</button>
+    <button class="zoom-btn" id="btn-zoom-out" title="Zoom out">−</button>
+    <button class="zoom-btn" id="btn-zoom-reset" title="Reset zoom" style="font-size:13px;">⟳</button>
+    <span id="zoom-indicator">100%</span>
+  </div>
+</div>
+<div id="zoom-hint">Scroll to zoom · Drag to pan · Labels appear when zoomed in</div>
 
 <div class="legend">
   <span style="font-weight:600; color:#333;">Transition type:</span>
@@ -372,7 +424,8 @@ function fmtHalflife(t) {
 // ── SVG renderer ───────────────────────────────────────────────────────────
 function renderLevelScheme(container, isotopeLabel, levels, gammas) {
   if (levels.length === 0) {
-    container.innerHTML = '<p style="padding:24px;color:#c0392b;font-weight:600;">No levels found for this isotope in the ADOPTED LEVELS section.</p>';
+    container.querySelectorAll('svg').forEach(el => el.remove());
+    container.insertAdjacentHTML('beforeend', '<p style="padding:24px;color:#c0392b;font-weight:600;">No levels found for this isotope in the ADOPTED LEVELS section.</p>');
     return;
   }
 
@@ -536,32 +589,41 @@ function renderLevelScheme(container, isotopeLabel, levels, gammas) {
     }
   }
 
+  // Collect level y-positions for zoom handler
+  const levelPositions = [];
+
   // Render
   for (const { lv, y, lines, blockTop } of labelBlocks) {
     const isGS = lv.energy === 0;
+    levelPositions.push(y);
 
     svgContent += `<g>`;
 
-    // Level line
+    // Level line (always visible)
     svgContent += `<line x1="${LX1}" y1="${y}" x2="${LX2}" y2="${y}"
       stroke="${isGS ? '#111' : '#333'}" stroke-width="${isGS ? 2.5 : 1.5}"/>`;
 
-    // LEFT side: energy value (always at exact y, right-aligned before level line)
+    // Tooltip on the line itself
+    svgContent += `<title>${escapeXml(`E = ${lv.energy} keV   Jπ = ${lv.jpi || '?'}   T½ = ${fmtHalflife(lv.halflife) || '?'}`)}</title>`;
+
+    // Label group — hidden when zoomed out, shown when zoomed in
+    const labelX    = LX2 + 10;
+    const midLabelY = blockTop + lines.length * LABEL_LINE_H / 2;
+
+    svgContent += `<g class="llbl">`;
+
+    // Left side: energy value at exact level y
     svgContent += `<text x="${LX1 - 7}" y="${y + 3.5}" text-anchor="end"
       font-family="sans-serif" font-size="9.5" fill="#555">${fmtEnergy(lv.energy)}</text>`;
 
-    // RIGHT side: label block
-    const labelX  = LX2 + 10;
-    const midLabelY = blockTop + lines.length * LABEL_LINE_H / 2;
-
-    // Connector line from level line to label mid if significantly offset
+    // Connector line if label block is offset from level line
     if (Math.abs(midLabelY - y) > 8) {
       svgContent += `<line x1="${LX2}" y1="${y}" x2="${labelX - 3}" y2="${midLabelY}"
         stroke="#bbb" stroke-width="0.7"/>`;
     }
 
-    // Draw each text line
-    let lineY = blockTop + LABEL_LINE_H - 2;   // first baseline
+    // Right side: stacked text lines
+    let lineY = blockTop + LABEL_LINE_H - 2;
     for (const ln of lines) {
       if (ln.type === 'jpi') {
         svgContent += `<text x="${labelX}" y="${lineY}"
@@ -577,12 +639,14 @@ function renderLevelScheme(container, isotopeLabel, levels, gammas) {
       lineY += LABEL_LINE_H;
     }
 
-    svgContent += `<title>${escapeXml(`E = ${lv.energy} keV   Jπ = ${lv.jpi || '?'}   T½ = ${fmtHalflife(lv.halflife) || '?'}`)}</title>`;
-    svgContent += `</g>`;
+    svgContent += `</g>`; // end llbl
+    svgContent += `</g>`; // end level group
   }
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${defs}${svgContent}</svg>`;
-  container.innerHTML = svg;
+  const DISPLAY_H = 680;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${DISPLAY_H}">${defs}${svgContent}</svg>`;
+  container.innerHTML += svg;   // keep zoom-bar div, append svg
+  setupZoom(container, levelPositions, W, H, DISPLAY_H);
 }
 
 function chooseTick(maxE) {
@@ -601,6 +665,92 @@ function escapeXml(s) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+// ── Zoom / pan handler ─────────────────────────────────────────────────────
+function setupZoom(container, levelYs, svgW, svgH, displayH) {
+  const svg        = container.querySelector('svg');
+  const zoomBar    = document.getElementById('zoom-bar');
+  const zoomHint   = document.getElementById('zoom-hint');
+  const indicator  = document.getElementById('zoom-indicator');
+  if (!svg) return;
+
+  zoomBar.style.display  = 'flex';
+  zoomHint.style.display = 'block';
+
+  let viewY = 0;
+  let viewH = svgH;   // start fully zoomed out
+
+  // Sorted ascending (ground state y is large, top-level y is small)
+  const sortedYs = [...levelYs].sort((a, b) => b - a);   // descending (bottom first)
+
+  function updateView() {
+    svg.setAttribute('viewBox', `0 ${viewY} ${svgW} ${viewH}`);
+
+    // Effective display pixels per SVG unit
+    const scale = displayH / viewH;
+
+    // Min gap in display px between consecutive visible levels
+    const visYs = sortedYs.filter(y => y >= viewY - 5 && y <= viewY + viewH + 5);
+    let minGap = Infinity;
+    for (let i = 1; i < visYs.length; i++) {
+      const gap = (visYs[i - 1] - visYs[i]) * scale;   // descending order so i-1 is lower
+      if (gap < minGap) minGap = gap;
+    }
+    const showLabels = visYs.length <= 1 || minGap >= 16;
+
+    svg.querySelectorAll('.llbl').forEach(g => {
+      g.style.display = showLabels ? '' : 'none';
+    });
+
+    // Zoom percentage indicator
+    indicator.textContent = Math.round(svgH / viewH * 100) + '%';
+  }
+
+  // ── Mouse wheel zoom (y-axis only) ──
+  container.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect    = svg.getBoundingClientRect();
+    const fracY   = (e.clientY - rect.top) / displayH;
+    const anchorY = viewY + fracY * viewH;   // SVG coord under cursor
+
+    const factor = e.deltaY > 0 ? 1.28 : 1 / 1.28;
+    viewH = Math.min(svgH, Math.max(60, viewH * factor));
+    viewY = anchorY - fracY * viewH;
+    viewY = Math.max(0, Math.min(svgH - viewH, viewY));
+    updateView();
+  }, { passive: false });
+
+  // ── Drag to pan ──
+  let drag = null;
+  container.addEventListener('mousedown', e => {
+    drag = { clientY: e.clientY, startViewY: viewY };
+    container.classList.add('dragging');
+  });
+  window.addEventListener('mousemove', e => {
+    if (!drag) return;
+    const dy = (e.clientY - drag.clientY) * (viewH / displayH);
+    viewY = Math.max(0, Math.min(svgH - viewH, drag.startViewY - dy));
+    updateView();
+  });
+  window.addEventListener('mouseup', () => {
+    drag = null;
+    container.classList.remove('dragging');
+  });
+
+  // ── Buttons ──
+  function zoomBy(factor) {
+    const midY = viewY + viewH / 2;
+    viewH = Math.min(svgH, Math.max(60, viewH * factor));
+    viewY = Math.max(0, Math.min(svgH - viewH, midY - viewH / 2));
+    updateView();
+  }
+
+  document.getElementById('btn-zoom-in').onclick    = () => zoomBy(1 / 1.5);
+  document.getElementById('btn-zoom-out').onclick   = () => zoomBy(1.5);
+  document.getElementById('btn-zoom-reset').onclick = () => { viewY = 0; viewH = svgH; updateView(); };
+
+  updateView();
 }
 
 // ── Main entry point ───────────────────────────────────────────────────────
@@ -625,7 +775,10 @@ async function drawScheme() {
 
   const paddedA = String(A).padStart(3, '0');
   const url     = `${DATA_BASE}/ensdf.${paddedA}`;
-  svgWrap.innerHTML = '';
+  // Remove previous SVG but keep zoom-bar div
+  svgWrap.querySelectorAll('svg').forEach(el => el.remove());
+  document.getElementById('zoom-bar').style.display = 'none';
+  document.getElementById('zoom-hint').style.display = 'none';
 
   let text;
   try {
