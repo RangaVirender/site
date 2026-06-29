@@ -172,7 +172,7 @@ function scanAvailableElements(text, A) {
   for (const line of text.split('\n')) {
     if (line.length < 8) continue;
     if (line.substring(0, 3) !== a_str) continue;
-    if (line[5] !== ' ' || line[7] !== ' ') continue;   // must be primary dataset header
+    if (line[5] !== ' ' || line[6] !== ' ' || line[7] !== ' ') continue;   // must be primary dataset header (no modifier)
     const ds = line.substring(8).trim();
     if (!ds.startsWith('ADOPTED LEVELS')) continue;
     const el = line.substring(3, 5).trim();
@@ -273,11 +273,13 @@ function parseENSDF(text, element, A) {
       continue;
     }
 
-    const cont    = line[5];            // blank = primary; digit/letter = continuation
-    const recType = line.length > 7 ? line[7] : ' ';
+    const cont     = line[5];            // blank = primary; digit/letter = continuation
+    const modifier = line.length > 6 ? line[6] : ' '; // col 7: blank=standard, c/C=comment
+    const recType  = line.length > 7 ? line[7] : ' ';
 
-    // Dataset header: cont=' ', recType=' ', text starts after col 8
-    if (cont === ' ' && recType === ' ') {
+    // Dataset header: cont=' ', no modifier (col7=' '), recType=' '
+    // Skip comment records (modifier='c'/'C') which share the blank recType slot
+    if (cont === ' ' && modifier === ' ' && recType === ' ') {
       const dsName = line.substring(8).trim().replace(/\s{2,}.*/, '').trim();
       if (dsName.startsWith('ADOPTED LEVELS')) {
         inAdopted = true;
