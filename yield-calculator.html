@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nuclear Reaction Yield Calculator</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --card: #1c2330;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --accent2: #3fb950;
+      --accent3: #f78166;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --text-dim: #6e7681;
+      --glow: rgba(88, 166, 255, 0.15);
+      --glow2: rgba(63, 185, 80, 0.12);
+      --err-col: #e3b341;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      padding: 32px 16px 64px;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .header .vr-tag {
+      display: inline-block;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+    .header h1 {
+      font-size: clamp(22px, 4vw, 36px);
+      font-weight: 700;
+      background: linear-gradient(135deg, #58a6ff 0%, #79c0ff 40%, #3fb950 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+    .header p {
+      color: var(--text-muted);
+      font-size: 14px;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* ── Layout ── */
+    .container { max-width: 960px; margin: 0 auto; }
+
+    /* ── Formula card ── */
+    .formula-card {
+      background: linear-gradient(135deg, rgba(88,166,255,.07), rgba(63,185,80,.05));
+      border: 1px solid rgba(88,166,255,.22);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .formula-card .icon {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+    .formula-card .formula-text {
+      font-size: 16px;
+      color: var(--text-muted);
+      line-height: 2;
+    }
+    .formula-card .formula-text strong {
+      color: var(--accent);
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+    }
+
+    /* ── Section groups ── */
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .section-label .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Input grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+    /* ── Field ── */
+    .field {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .field:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--glow);
+    }
+    .field label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+    .field .input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .field input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: 'Courier New', monospace;
+      font-weight: 600;
+      outline: none;
+      transition: border-color .15s;
+      min-width: 0;
+    }
+    .field input:focus { border-color: var(--accent); }
+    .field input::placeholder { color: var(--text-dim); font-weight: 400; font-size: 13px; }
+    .field .unit {
+      font-size: 14px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 9px 10px;
+      line-height: 1;
+    }
+    .field select.unit-select {
+      font-size: 14px;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 9px 8px;
+      line-height: 1;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      outline: none;
+      cursor: pointer;
+      transition: border-color .15s;
+    }
+    .field select.unit-select:focus { border-color: var(--accent); }
+
+    /* ── Error sub-row ── */
+    .err-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 7px;
+    }
+    .err-label {
+      font-size: 13px;
+      color: var(--err-col);
+      white-space: nowrap;
+      font-family: 'Courier New', monospace;
+      font-weight: 600;
+      min-width: 14px;
+    }
+    .err-row input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid rgba(227, 179, 65, 0.30);
+      border-radius: 8px;
+      padding: 7px 10px;
+      color: var(--err-col);
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+      font-weight: 600;
+      outline: none;
+      transition: border-color .15s;
+      min-width: 0;
+    }
+    .err-row input:focus { border-color: var(--err-col); }
+    .err-row input::placeholder { color: var(--text-dim); font-weight: 400; }
+    .err-row .err-unit {
+      font-size: 12px;
+      color: rgba(227,179,65,.65);
+      white-space: nowrap;
+    }
+
+    /* ── Buttons ── */
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+    .btn {
+      flex: 1;
+      min-width: 140px;
+      height: 52px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform .1s, opacity .15s, box-shadow .15s;
+      letter-spacing: .02em;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-calculate {
+      background: linear-gradient(135deg, #1f6feb, #388bfd);
+      color: #fff;
+      box-shadow: 0 4px 24px rgba(56,139,253,.3);
+    }
+    .btn-calculate:hover { box-shadow: 0 4px 32px rgba(56,139,253,.5); }
+    .btn-clear {
+      background: var(--card);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .btn-clear:hover { background: var(--surface); color: var(--text); }
+
+    /* ── Results ── */
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .result-card {
+      border-radius: 14px;
+      padding: 22px 24px;
+      border: 1px solid;
+      position: relative;
+      overflow: hidden;
+      transition: box-shadow .2s;
+    }
+    .result-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: .06;
+      pointer-events: none;
+    }
+    .result-card.diff {
+      background: linear-gradient(135deg, rgba(88,166,255,.08), rgba(88,166,255,.03));
+      border-color: rgba(88,166,255,.3);
+    }
+    .result-card.diff::before { background: radial-gradient(circle at top left, #58a6ff, transparent 60%); }
+    .result-card.total {
+      background: linear-gradient(135deg, rgba(63,185,80,.08), rgba(63,185,80,.03));
+      border-color: rgba(63,185,80,.3);
+    }
+    .result-card.total::before { background: radial-gradient(circle at top left, #3fb950, transparent 60%); }
+    .result-card.rate {
+      background: linear-gradient(135deg, rgba(255,166,87,.08), rgba(255,166,87,.03));
+      border-color: rgba(255,166,87,.3);
+    }
+    .result-card.rate::before { background: radial-gradient(circle at top left, #ffa657, transparent 60%); }
+
+    .result-card .result-label {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .result-card.diff .result-label { color: var(--accent); }
+    .result-card.total .result-label { color: var(--accent2); }
+    .result-card.rate .result-label { color: #ffa657; }
+
+    .result-card .result-symbol {
+      font-size: 22px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+    }
+    .result-card .result-value {
+      font-size: clamp(18px, 3vw, 24px);
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+      letter-spacing: .02em;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .result-card.diff .result-value { color: #79c0ff; }
+    .result-card.total .result-value { color: #56d364; }
+    .result-card.rate .result-value { color: #ffb774; }
+
+    .result-card .result-uncertainty {
+      font-size: 14px;
+      font-family: 'Courier New', monospace;
+      margin-top: 8px;
+      color: var(--err-col);
+      min-height: 20px;
+    }
+    .result-card .result-unit {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .result-placeholder {
+      color: var(--text-dim);
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    /* ── Error state ── */
+    .error-msg {
+      display: none;
+      color: var(--accent3);
+      font-size: 13px;
+      margin-top: 8px;
+      padding: 10px 14px;
+      background: rgba(247,129,102,.08);
+      border: 1px solid rgba(247,129,102,.25);
+      border-radius: 8px;
+    }
+    .error-msg.visible { display: block; }
+
+    /* ── Footer note ── */
+    .footnote {
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 14px;
+      margin-top: 40px;
+      line-height: 2;
+    }
+
+    /* ── Error legend ── */
+    .err-legend {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: rgba(227,179,65,.7);
+      margin-bottom: 20px;
+      margin-top: -16px;
+    }
+    .err-legend-dot {
+      width: 8px; height: 8px;
+      border-radius: 2px;
+      background: var(--err-col);
+      opacity: .7;
+      flex-shrink: 0;
+    }
+
+    /* ── Explanation cards ── */
+    .explain {
+      margin-top: 44px;
+    }
+    .explain-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .explain-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      border-left: 3px solid var(--border);
+    }
+    .explain-card.c-total { border-left-color: var(--accent2); }
+    .explain-card.c-diff  { border-left-color: var(--accent); }
+    .explain-card.c-rate  { border-left-color: #ffa657; }
+    .explain-card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .explain-card .formula-mini {
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: var(--accent);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin: 8px 0;
+      display: inline-block;
+    }
+    .explain-card p {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    @media (max-width: 480px) {
+      .formula-card { flex-direction: column; }
+      .actions { flex-direction: column; }
+      .btn { min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="vr-tag">VR</div>
+    <h1>Reaction Yield Calculator</h1>
+    <p>Compute the total reaction yield and expected detected counts from a known cross section, beam exposure, and target/detector parameters.</p>
+  </div>
+
+  <!-- Formula hint -->
+  <div class="formula-card">
+    <div class="icon">&#x1F52C;</div>
+    <div class="formula-text">
+      <strong>Y<sub>total</sub></strong> &nbsp;=&nbsp;
+      <strong>&sigma;<sub>total</sub> &middot; 10<sup>&minus;27</sup> &middot; N<sub>beam</sub> &middot; N<sub>target</sub></strong>
+      <br>
+      <strong>N<sub>beam</sub> = Q &divide; (q &middot; e)</strong> &nbsp;&nbsp;&middot;&nbsp;&nbsp;
+      <strong>N<sub>target</sub> = &rho; &middot; N<sub>A</sub> &middot; f% &divide; (100 &middot; A)</strong>
+      <br>
+      <strong>Counts<sub>detected</sub> = Y<sub>total</sub> &middot; (&Omega; / 4&pi;) &middot; &epsilon;</strong>
+      &nbsp;&nbsp;&middot;&nbsp;&nbsp;
+      <strong>Q = I &middot; t</strong>
+    </div>
+  </div>
+
+  <!-- Error legend -->
+  <div class="err-legend">
+    <span class="err-legend-dot"></span>
+    Gold fields (&plusmn;) are 1&sigma; uncertainties — defaults are pre-filled; edit as needed.
+  </div>
+
+  <!-- Section: Cross Section -->
+  <div class="section-label">
+    <span class="dot" style="background:#58a6ff"></span>
+    Reaction Cross Section
+  </div>
+  <div class="grid">
+    <div class="field">
+      <label>Total cross section</label>
+      <div class="input-row">
+        <input id="Sigma" type="number" placeholder="e.g. 250" min="0" step="any" value="250" />
+        <select id="SigmaUnit" class="unit-select">
+          <option value="1e-3">&mu;b (micro barn)</option>
+          <option value="1e-6">nb (nano barn)</option>
+          <option value="1" selected>mb (milli barn)</option>
+          <option value="1000">b (barn)</option>
+        </select>
+      </div>
+      <div class="err-row">
+        <span class="err-label">&plusmn;</span>
+        <input id="dSigma" type="number" placeholder="5% of &sigma;" min="0" step="any" value="12.5" />
+        <span class="err-unit" id="dSigmaUnit">mb</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Projectile & Target -->
+  <div class="section-label">
+    <span class="dot" style="background:#d2a8ff"></span>
+    Projectile &amp; Target Nuclei
+  </div>
+  <div class="grid grid-3">
+    <div class="field">
+      <label>Atomic number of target</label>
+      <div class="input-row">
+        <input id="Ztarget" type="number" placeholder="e.g. 28" min="1" value="28" />
+        <span class="unit">Z</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Mass number of target</label>
+      <div class="input-row">
+        <input id="Atarget" type="number" placeholder="e.g. 58" min="1" value="58" />
+        <span class="unit">A</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Mass % of nuclei in target</label>
+      <div class="input-row">
+        <input id="Percent" type="number" placeholder="e.g. 68.1" min="0" max="100" step="any" value="68.1" />
+        <span class="unit">%</span>
+      </div>
+      <div class="err-row">
+        <span class="err-label">&plusmn;</span>
+        <input id="dPercent" type="number" placeholder="abs. %" min="0" step="any" value="0.5" />
+        <span class="err-unit">% (abs.)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Beam -->
+  <div class="section-label">
+    <span class="dot" style="background:#ffa657"></span>
+    Beam Exposure
+  </div>
+  <div class="grid grid-3">
+    <div class="field">
+      <label>Beam current</label>
+      <div class="input-row">
+        <input id="Current" type="number" placeholder="e.g. 5" min="0" step="any" value="5" />
+        <select id="CurrentUnit" class="unit-select">
+          <option value="1" selected>nA</option>
+          <option value="1000">&mu;A</option>
+        </select>
+      </div>
+      <div class="err-row">
+        <span class="err-label">&plusmn;</span>
+        <input id="dCurrent" type="number" placeholder="1% of I" min="0" step="any" value="0.05" />
+        <span class="err-unit" id="dCurrentUnit">nA</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Irradiation time</label>
+      <div class="input-row">
+        <input id="Time" type="number" placeholder="e.g. 3600" min="0" step="any" value="3600" />
+        <select id="TimeUnit" class="unit-select">
+          <option value="1" selected>s (seconds)</option>
+          <option value="60">min (minutes)</option>
+          <option value="3600">h (hours)</option>
+        </select>
+      </div>
+      <div class="err-row">
+        <span class="err-label">&plusmn;</span>
+        <input id="dTime" type="number" placeholder="e.g. 1" min="0" step="any" value="1" />
+        <span class="err-unit" id="dTimeUnit">s</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Charge state of projectile</label>
+      <div class="input-row">
+        <input id="ChargeState" type="number" placeholder="e.g. 2" min="1" step="1" value="2" />
+        <span class="unit">e</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Target -->
+  <div class="section-label">
+    <span class="dot" style="background:#3fb950"></span>
+    Target Properties
+  </div>
+  <div class="grid">
+    <div class="field">
+      <label>Areal density of target</label>
+      <div class="input-row">
+        <input id="Areal" type="number" placeholder="e.g. 1.5" min="0" step="any" value="1.5" />
+        <select id="ArealUnit" class="unit-select">
+          <option value="0.001" selected>mg/cm&sup2;</option>
+          <option value="1">g/cm&sup2;</option>
+        </select>
+      </div>
+      <div class="err-row">
+        <span class="err-label">&plusmn;</span>
+        <input id="dAreal" type="number" placeholder="1% of &rho;" min="0" step="any" value="0.015" />
+        <span class="err-unit" id="dArealUnit">mg/cm&sup2;</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Detector -->
+  <div class="section-label">
+    <span class="dot" style="background:#f78166"></span>
+    Detector &amp; Geometry (for detected counts)
+  </div>
+  <div class="grid grid-3">
+    <div class="field">
+      <label>Radius of detector</label>
+      <div class="input-row">
+        <input id="Radius" type="number" placeholder="e.g. 2.5" min="0" step="any" value="2.5" />
+        <select id="RadiusUnit" class="unit-select">
+          <option value="0.1">mm</option>
+          <option value="1" selected>cm</option>
+          <option value="2.54">in</option>
+        </select>
+      </div>
+      <div class="err-row">
+        <span class="err-label">&plusmn;</span>
+        <input id="dRadius" type="number" placeholder="e.g. 0.05" min="0" step="any" value="0.05" />
+        <span class="err-unit" id="dRadiusUnit">cm</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Distance from target to detector</label>
+      <div class="input-row">
+        <input id="Distance" type="number" placeholder="e.g. 15" min="0" step="any" value="15" />
+        <select id="DistanceUnit" class="unit-select">
+          <option value="0.1">mm</option>
+          <option value="1" selected>cm</option>
+          <option value="2.54">in</option>
+        </select>
+      </div>
+      <div class="err-row">
+        <span class="err-label">&plusmn;</span>
+        <input id="dDistance" type="number" placeholder="e.g. 0.1" min="0" step="any" value="0.1" />
+        <span class="err-unit" id="dDistanceUnit">cm</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Full-energy efficiency of detector</label>
+      <div class="input-row">
+        <input id="Eff" type="number" placeholder="e.g. 0.85" min="0" max="1" step="any" value="0.85" />
+        <span class="unit">&mdash;</span>
+      </div>
+      <div class="err-row">
+        <span class="err-label">&plusmn;</span>
+        <input id="dEff" type="number" placeholder="1% of &epsilon;" min="0" step="any" value="0.0085" />
+        <span class="err-unit">(abs.)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- Buttons -->
+  <div class="actions">
+    <button class="btn btn-calculate" onclick="calculate()">Calculate Yield</button>
+    <button class="btn btn-clear" onclick="clearAll()">Clear All</button>
+  </div>
+
+  <!-- Results -->
+  <div class="results">
+    <div class="result-card total">
+      <div class="result-label">Total Reaction Yield</div>
+      <div class="result-symbol">Y<sub>total</sub></div>
+      <div class="result-value" id="outYield"><span class="result-placeholder">&#x2014;</span></div>
+      <div class="result-uncertainty" id="outYieldErr"></div>
+      <div class="result-unit">reactions (particles produced)</div>
+    </div>
+    <div class="result-card diff">
+      <div class="result-label">Expected Detected Counts</div>
+      <div class="result-symbol">N<sub>det</sub></div>
+      <div class="result-value" id="outCounts"><span class="result-placeholder">&#x2014;</span></div>
+      <div class="result-uncertainty" id="outCountsErr"></div>
+      <div class="result-unit">counts in full-energy peak</div>
+    </div>
+    <div class="result-card rate">
+      <div class="result-label">Average Yield Rate</div>
+      <div class="result-symbol">Y&#775;</div>
+      <div class="result-value" id="outRate"><span class="result-placeholder">&#x2014;</span></div>
+      <div class="result-uncertainty" id="outRateErr"></div>
+      <div class="result-unit">reactions / second</div>
+    </div>
+  </div>
+
+  <!-- Explanations -->
+  <div class="explain">
+    <div class="section-label">
+      <span class="dot" style="background:#8b949e"></span>
+      What Do These Results Mean?
+    </div>
+    <div class="explain-grid">
+      <div class="explain-card c-total">
+        <h3>Total Reaction Yield &mdash; Y<sub>total</sub></h3>
+        <div class="formula-mini">Y<sub>total</sub> = &sigma;<sub>total</sub> &middot; N<sub>beam</sub> &middot; N<sub>target</sub></div>
+        <p>
+          The total number of nuclear reactions actually occurring in the target over the whole irradiation &mdash;
+          i.e. how many product particles/nuclei are physically created, regardless of whether anything detects
+          them. It depends only on the beam and target: N<sub>beam</sub> = Q/(q&middot;e) is the number of incident
+          projectiles (with Q = I&middot;t), and N<sub>target</sub> = &rho;&middot;N<sub>A</sub>&middot;(f%/100)/A is
+          the number of target atoms per cm&sup2; seen by the beam. This is a "4&pi;" quantity &mdash; it does not
+          depend on detector geometry or efficiency at all.
+        </p>
+      </div>
+      <div class="explain-card c-diff">
+        <h3>Expected Detected Counts &mdash; N<sub>det</sub></h3>
+        <div class="formula-mini">N<sub>det</sub> = Y<sub>total</sub> &middot; (&Omega;/4&pi;) &middot; &epsilon;</div>
+        <p>
+          Of those Y<sub>total</sub> reactions, only the fraction flying into the detector's solid angle &Omega; can
+          be seen, and of those, only the fraction &epsilon; is actually registered (full-energy peak efficiency).
+          This calculation assumes the reaction products are emitted isotropically, so the fraction reaching the
+          detector is simply &Omega;/4&pi;. This is the number of counts you'd expect in the spectrum's peak &mdash;
+          the inverse of the cross-section calculator, where measured counts are used to extract &sigma; instead.
+        </p>
+      </div>
+      <div class="explain-card c-rate">
+        <h3>Average Yield Rate &mdash; Y&#775;</h3>
+        <div class="formula-mini">Y&#775; = Y<sub>total</sub> / t</div>
+        <p>
+          The total yield divided by the irradiation time &mdash; reactions per second, averaged over the whole run.
+          Useful for estimating count rates, dead-time effects, or how long a run needs to be to accumulate a target
+          number of reactions/counts. It is a rate of <em>total</em> reactions (not detected counts), assuming a
+          constant beam current over the exposure.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    1 barn = 10&minus;&sup2;&sup4; cm&sup2; &nbsp;&middot;&nbsp; N<sub>A</sub> = 6.022 &times; 10<sup>23</sup> mol<sup>&minus;1</sup> &nbsp;&middot;&nbsp; e = 1.6 &times; 10<sup>&minus;19</sup> C
+    <br>
+    Uncertainties propagated in quadrature: (&delta;Y/Y)&sup2; = (&delta;&sigma;/&sigma;)&sup2; + (&delta;I/I)&sup2; + (&delta;t/t)&sup2; + (&delta;&rho;/&rho;)&sup2; + (&delta;f/f)&sup2;;
+    detected counts additionally include (&delta;&Omega;/&Omega;)&sup2; + (&delta;&epsilon;/&epsilon;)&sup2;
+    <br><br>
+    <a href="https://www.vranga.in" target="_blank" rel="noopener"
+       style="color:var(--text-dim);text-decoration:none;border-bottom:1px solid var(--border);padding-bottom:1px;transition:color .15s;"
+       onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-dim)'">www.vranga.in</a>
+  </div>
+
+</div>
+
+<script>
+  function getVal(id) {
+    return parseFloat(document.getElementById(id).value);
+  }
+
+  function getErrVal(id, fallback) {
+    const v = parseFloat(document.getElementById(id).value);
+    return (!isNaN(v) && v >= 0) ? v : fallback;
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.classList.add('visible');
+  }
+
+  function hideError() {
+    document.getElementById('errorMsg').classList.remove('visible');
+  }
+
+  function calculate() {
+    hideError();
+
+    const required = {
+      'Total cross section (mb)':   'Sigma',
+      'Mass no. of target (A)':     'Atarget',
+      'Beam current (nA)':          'Current',
+      'Irradiation time (s)':       'Time',
+      'Charge state':               'ChargeState',
+      'Areal density (g/cm²)':      'Areal',
+      'Mass % of target nuclei':    'Percent',
+      'Detector efficiency':        'Eff',
+      'Detector radius (cm)':       'Radius',
+      'Distance (cm)':              'Distance',
+    };
+
+    for (const [label, id] of Object.entries(required)) {
+      if (isNaN(getVal(id))) {
+        showError(`Missing or invalid input: "${label}"`);
+        return;
+      }
+    }
+
+    const sigmaUnitFactor = parseFloat(document.getElementById('SigmaUnit').value);
+    const sigma = getVal('Sigma') * sigmaUnitFactor;       // converted to mb
+    const A     = getVal('Atarget');
+    const currentUnitFactor = parseFloat(document.getElementById('CurrentUnit').value);
+    const I     = getVal('Current') * currentUnitFactor;     // converted to nA
+    const timeUnitFactor = parseFloat(document.getElementById('TimeUnit').value);
+    const t     = getVal('Time') * timeUnitFactor;        // converted to s
+    const q     = getVal('ChargeState');
+    const arealUnitFactor = parseFloat(document.getElementById('ArealUnit').value);
+    const rho   = getVal('Areal') * arealUnitFactor;       // converted to g/cm^2
+    const pct   = getVal('Percent');     // %
+    const eff   = getVal('Eff');
+    const radiusUnitFactor   = parseFloat(document.getElementById('RadiusUnit').value);
+    const distanceUnitFactor = parseFloat(document.getElementById('DistanceUnit').value);
+    const r     = getVal('Radius') * radiusUnitFactor;      // converted to cm
+    const d     = getVal('Distance') * distanceUnitFactor;  // converted to cm
+
+    if (q === 0 || A === 0) {
+      showError('Charge state and target mass number must be non-zero.');
+      return;
+    }
+
+    const solidAngle = 2.0 * Math.PI * (1.0 - d / Math.sqrt(r * r + d * d));
+    if (solidAngle <= 0) {
+      showError('Detector geometry yields a non-positive solid angle. Check radius and distance.');
+      return;
+    }
+
+    /* total incident charge (nC) */
+    const Q = I * t;
+
+    /* number of incident beam particles: Q[nC]*1e-9 / (q * e) */
+    const Nbeam = (Q * 1.0e-9) / (q * 1.6e-19);
+
+    /* target atoms per cm^2 */
+    const Ntarget = (rho * 6.022e23 * (pct / 100.0)) / A;
+
+    /* cross section in cm^2: mb * 1e-27 */
+    const sigmaCm2 = sigma * 1.0e-27;
+
+    const yieldTotal = sigmaCm2 * Nbeam * Ntarget;
+    const detCounts  = yieldTotal * (solidAngle / (4.0 * Math.PI)) * eff;
+    const rate       = yieldTotal / t;
+
+    document.getElementById('outYield').innerHTML  = formatResult(yieldTotal);
+    document.getElementById('outCounts').innerHTML = formatResult(detCounts);
+    document.getElementById('outRate').innerHTML   = formatResult(rate);
+
+    /* ── Error propagation ── */
+    const dSigma = getErrVal('dSigma', (sigma / sigmaUnitFactor) * 0.05) * sigmaUnitFactor;   /* default 5%, entered in same unit as sigma */
+    const dI     = getErrVal('dCurrent', (I / currentUnitFactor) * 0.01) * currentUnitFactor;     /* default 1%, entered in same unit as I */
+    const dt     = getErrVal('dTime', (t / timeUnitFactor) * 0.01) * timeUnitFactor;   /* default 1%, entered in same unit as time */
+    const dRho   = getErrVal('dAreal', (rho / arealUnitFactor) * 0.01) * arealUnitFactor;
+    const dPct   = getErrVal('dPercent', pct * 0.01);
+    const dEff   = getErrVal('dEff', eff * 0.01);
+    const dr     = getErrVal('dRadius', 0.05 / radiusUnitFactor) * radiusUnitFactor;
+    const dd     = getErrVal('dDistance', 0.10 / distanceUnitFactor) * distanceUnitFactor;
+
+    /* relative error on Q = I*t: combine dI/I and dt/t */
+    const relQSq = Math.pow(dI / I, 2) + Math.pow(dt / t, 2);
+
+    /* relative error on total yield (no geometry/efficiency terms) */
+    const relYieldSq =
+      Math.pow(dSigma / sigma, 2) +
+      relQSq +
+      Math.pow(dRho / rho, 2) +
+      Math.pow(dPct / pct, 2);
+
+    const relYieldErr = Math.sqrt(relYieldSq);
+    const dYield = yieldTotal * relYieldErr;
+    const dRate  = rate * Math.sqrt(relYieldSq + Math.pow(dt / t, 2));
+
+    /* solid angle uncertainty */
+    const hyp = Math.sqrt(r * r + d * d);
+    const dOmega_dr = 2.0 * Math.PI * (d * r) / (hyp * hyp * hyp);
+    const dOmega_dd = -2.0 * Math.PI * (r * r) / (hyp * hyp * hyp);
+    const dOmega = Math.sqrt(
+      Math.pow(dOmega_dr * dr, 2) +
+      Math.pow(dOmega_dd * dd, 2)
+    );
+
+    /* relative error on detected counts: yield terms + Omega + efficiency */
+    const relCountsSq =
+      relYieldSq +
+      Math.pow(dOmega / solidAngle, 2) +
+      Math.pow(dEff / eff, 2);
+
+    const relCountsErr = Math.sqrt(relCountsSq);
+    const dCounts = detCounts * relCountsErr;
+
+    document.getElementById('outYieldErr').innerHTML =
+      '&plusmn; ' + formatResult(dYield) +
+      ' <span style="font-size:12px;color:var(--text-dim)">(' + (relYieldErr * 100).toFixed(1) + '%)</span>';
+    document.getElementById('outCountsErr').innerHTML =
+      '&plusmn; ' + formatResult(dCounts) +
+      ' <span style="font-size:12px;color:var(--text-dim)">(' + (relCountsErr * 100).toFixed(1) + '%)</span>';
+    document.getElementById('outRateErr').innerHTML =
+      '&plusmn; ' + formatResult(dRate) +
+      ' <span style="font-size:12px;color:var(--text-dim)">(' + (Math.sqrt(relYieldSq + Math.pow(dt/t,2)) * 100).toFixed(1) + '%)</span>';
+  }
+
+  function formatResult(val) {
+    if (!isFinite(val)) return '<span class="result-placeholder">Error</span>';
+    const abs = Math.abs(val);
+    if (abs > 0 && (abs >= 1e5 || abs < 0.01)) {
+      return val.toExponential(4);
+    }
+    return val.toPrecision(5);
+  }
+
+  function clearAll() {
+    const ids = ['Sigma','dSigma','Ztarget','Atarget','Current','dCurrent',
+                 'Time','dTime','ChargeState','Areal','dAreal','Percent','dPercent',
+                 'Radius','dRadius','Distance','dDistance','Eff','dEff'];
+    ids.forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('outYield').innerHTML  = '<span class="result-placeholder">&#x2014;</span>';
+    document.getElementById('outCounts').innerHTML = '<span class="result-placeholder">&#x2014;</span>';
+    document.getElementById('outRate').innerHTML   = '<span class="result-placeholder">&#x2014;</span>';
+    document.getElementById('outYieldErr').innerHTML  = '';
+    document.getElementById('outCountsErr').innerHTML = '';
+    document.getElementById('outRateErr').innerHTML   = '';
+    hideError();
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') calculate();
+  });
+
+  document.getElementById('SigmaUnit').addEventListener('change', function () {
+    const labels = { '1e-3': 'µb', '1e-6': 'nb', '1': 'mb', '1000': 'b' };
+    document.getElementById('dSigmaUnit').textContent = labels[this.value];
+  });
+
+  document.getElementById('TimeUnit').addEventListener('change', function () {
+    const labels = { '1': 's', '60': 'min', '3600': 'h' };
+    document.getElementById('dTimeUnit').textContent = labels[this.value];
+  });
+
+  document.getElementById('ArealUnit').addEventListener('change', function () {
+    const labels = { '0.001': 'mg/cm²', '1': 'g/cm²' };
+    document.getElementById('dArealUnit').textContent = labels[this.value];
+  });
+
+  document.getElementById('CurrentUnit').addEventListener('change', function () {
+    const labels = { '1': 'nA', '1000': 'µA' };
+    document.getElementById('dCurrentUnit').textContent = labels[this.value];
+  });
+
+  const lengthLabels = { '0.1': 'mm', '1': 'cm', '2.54': 'in' };
+  document.getElementById('RadiusUnit').addEventListener('change', function () {
+    document.getElementById('dRadiusUnit').textContent = lengthLabels[this.value];
+  });
+  document.getElementById('DistanceUnit').addEventListener('change', function () {
+    document.getElementById('dDistanceUnit').textContent = lengthLabels[this.value];
+  });
+
+  window.addEventListener('load', calculate);
+</script>
+</body>
+</html>
