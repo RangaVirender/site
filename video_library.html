@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VR Video Library</title>
+  <title>VR Channel Library</title>
   <style>
     :root {
       --bg: #0f0f13;
@@ -227,14 +227,14 @@
 <header>
   <div class="header-top">
     <div style="display:flex;flex-direction:column;gap:4px;">
-      <h1><span style="background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">&#9654; VR</span> Video Library</h1>
+      <h1><span style="background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">&#9654; VR</span> Channel Library</h1>
       <a href="https://www.vranga.in" target="_blank" style="color:var(--muted);font-size:0.82rem;text-decoration:none;transition:color 0.18s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">www.vranga.in</a>
     </div>
-    <span class="count-badge" id="count">0 videos</span>
+    <span class="count-badge" id="count">0 channels</span>
     <div style="display:flex;align-items:center;gap:12px;">
     <div class="search-wrap">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input id="search" type="text" placeholder="Search videos…" />
+      <input id="search" type="text" placeholder="Search channels…" />
     </div>
     <button id="themeToggle" onclick="toggleTheme()" title="Toggle theme" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;padding:8px 10px;display:flex;align-items:center;transition:border-color 0.18s,color 0.18s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
       <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -247,45 +247,345 @@
 <main>
   <div class="no-results" id="noResults">
     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <p>No videos match your search.</p>
+    <p>No channels match your search.</p>
   </div>
   <div class="grid" id="grid"></div>
 </main>
 
 <script>
-  const videos = [
-    {
-      id: 'oI_X2cMHNe0',
-      title: 'How Electricity Actually Works',
-      desc: 'Energy doesn\'t flow through wires — it flows through the fields around them. A mind-bending look at electromagnetism.',
-      tags: ['veritasium', 'physics', 'electricity', 'electromagnetism']
-    },
-    {
-      id: 'HeQX2HjkcNo',
-      title: 'Math\'s Fundamental Flaw',
-      desc: 'Not everything that is true can be proven. The discovery that transformed infinity and led to the modern computer.',
-      tags: ['veritasium', 'math', 'logic', 'godel']
-    },
-    {
-      id: '24GfgNtnjXc',
-      title: 'You\'re Probably Wrong About Rainbows',
-      desc: 'Rainbows are far stranger than you think — why they\'re circular, why it\'s brighter underneath, and what polarised sunglasses reveal.',
-      tags: ['veritasium', 'optics', 'physics', 'light']
-    },
-    {
-      id: 'NIk_0AW5hFU',
-      title: 'There Is Something Faster Than Light',
-      desc: 'Quantum mechanics reveals a real faster-than-light effect — and how the Einstein–Bohr argument changed physics forever.',
-      tags: ['veritasium', 'quantum', 'physics', 'relativity']
-    }
+  const channels = [
+    { title: 'Miniminuteman', desc: 'History and archaeology channel that debunks pseudo-history and alternative-history claims with evidence-based analysis.', tags: ['History'], url: 'http://www.youtube.com/channel/UC-SrCCzkGq0wmSAuRs7EBFg' },
+    { title: 'Indian Youth Nuclear Society IYNS (IYNS)', desc: 'A network of Indian professionals and researchers spreading awareness about nuclear technology\'s role in clean energy and climate action.', tags: ['Nuclear Science', 'Technology'], url: 'http://www.youtube.com/channel/UC-TyZSHuBrSgW7sA5GnFXfA' },
+    { title: 'Robert Greene ', desc: 'Robert Greene, bestselling author of The 48 Laws of Power and Mastery, shares talks and lessons on strategy, power, and human nature.', tags: ['Business'], url: 'http://www.youtube.com/channel/UC-qsP49Ai2GymJgyKX38l1w' },
+    { title: 'TEDxYouth', desc: 'TEDx talks curated for a youth audience on ideas worth spreading.', tags: [], url: 'http://www.youtube.com/channel/UC-yTB2bUcin9mmah36sXiYA' },
+    { title: 'Breaking Taps', desc: 'Home-shop machining and metalworking projects, from tool builds to precision fabrication.', tags: ['Engineering'], url: 'http://www.youtube.com/channel/UC06HVrkOL33D5lLnCPjr6NQ' },
+    { title: 'The Satsang Foundation', desc: 'Talks, satsangs, and retreat sessions by spiritual teacher Sri M on the Upanishads, meditation, and Kriya Yoga.', tags: ['Spirituality', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UC0nharYWf2rbb7sz4GukJZQ' },
+    { title: 'Teal Swan', desc: 'Teal Swan shares teachings on trauma recovery, spirituality, and personal transformation.', tags: ['Spirituality', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UC1KIUp4PNCyIwCPTq1hYzWQ' },
+    { title: 'Asianometry', desc: 'Deep dives into the history of semiconductors, technology, and business.', tags: ['Technology', 'History', 'Business'], url: 'http://www.youtube.com/channel/UC1LpsuAUaKoMzzJSEt5WImw' },
+    { title: 'The Action Lab', desc: 'James, a science teacher, performs hands-on science experiments and demonstrations.', tags: ['Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UC1VLQPn9cYSqx8plbk9RxxQ' },
+    { title: 'Shastrokta Ayurveda', desc: 'Shares authentic Ayurveda knowledge sourced from classical texts, covering the eight branches of Ashtanga Ayurveda in Hindi.', tags: ['Spirituality'], url: 'http://www.youtube.com/channel/UC1omZxODjjH8BAFGnDUZmEA' },
+    { title: 'Sabine Hossenfelder', desc: 'Physicist Sabine Hossenfelder discusses physics research, science news, and commentary on the state of academia.', tags: ['Physics', 'Science', 'News & Politics'], url: 'http://www.youtube.com/channel/UC1yNl2E66ZzKApQdRuTQ4tw' },
+    { title: 'Huygens Optics', desc: 'Deep dives into precision optics, telescope mirror-making, and the physics of light.', tags: ['Physics'], url: 'http://www.youtube.com/channel/UC26YLK0OEbLB3TCYxGh8xVQ' },
+    { title: 'EEVblog', desc: 'Dave Jones\'s electronics engineering channel covering teardown reviews, circuit design, and test equipment.', tags: ['Engineering', 'Technology'], url: 'http://www.youtube.com/channel/UC2DjFE7Xf11URZqWBigcVOQ' },
+    { title: '2veritasium', desc: 'Veritasium\'s second channel for extra science content and behind-the-scenes videos.', tags: ['Science'], url: 'http://www.youtube.com/channel/UC2LZO6swZ9SLUEOks3WnsfA' },
+    { title: 'SUFISCORE', desc: 'A UK-based music label and channel spotlighting South Asian music, Sufi, and Ghazal artists.', tags: ['Music'], url: 'http://www.youtube.com/channel/UC2P4ZF54afaHo7JcDVVCWzQ' },
+    { title: 'Think School Hindi', desc: 'Think School\'s Hindi-language channel on business and economics case studies.', tags: ['Business'], url: 'http://www.youtube.com/channel/UC3-IDKNIABI98_J2aqa2YjQ' },
+    { title: 'Sangam Talks', desc: 'Sangam Talks shares educational content reclaiming and retelling Indian civilizational history and knowledge systems.', tags: ['History', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UC3nhAUpe7aBm1rFCBgoWWcA' },
+    { title: 'ASET Forum', desc: 'TIFR\'s ASET Forum shares talks on advances in science, engineering, and technology.', tags: ['Engineering', 'Technology', 'Science'], url: 'http://www.youtube.com/channel/UC3qOpi5oNg8YYI5ZU5FP9eA' },
+    { title: 'American Physical Society', desc: 'American Physical Society\'s channel covering physics research and outreach.', tags: ['Physics'], url: 'http://www.youtube.com/channel/UC471PiF0kKzg5pb_HoT2xHA' },
+    { title: 'ColdFusion', desc: 'Explores technology, business, and the future through documentary-style videos.', tags: ['Technology', 'Documentary', 'Business'], url: 'http://www.youtube.com/channel/UC4QZ_LsYcvcq7qOsOhpAX4A' },
+    { title: 'Khan Academy', desc: 'Free, world-class education across math, science, economics, and more for learners of all ages.', tags: ['Mathematics', 'Science', 'Education & Lectures', 'Business'], url: 'http://www.youtube.com/channel/UC4a-Gbdw7vOaccHmFo40b9g' },
+    { title: 'The Linux Experiment', desc: 'News, reviews, and commentary on the Linux desktop and open-source ecosystem.', tags: ['Science', 'News & Politics'], url: 'http://www.youtube.com/channel/UC5UAwBUum7CPN5buc-_N1Fw' },
+    { title: 'SmarterEveryDay', desc: 'Destin Sandlin explores science and engineering through curiosity-driven experiments and demonstrations.', tags: ['Engineering', 'Science'], url: 'http://www.youtube.com/channel/UC6107grRI4m0o2-emgoDnAA' },
+    { title: 'nptelhrd', desc: 'NPTEL video lectures from IIT professors covering engineering and science courses.', tags: ['Engineering', 'Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UC640y4UvDAlya_WOj5U4pfA' },
+    { title: 'Today I Found Out', desc: 'Bite-sized videos exploring interesting trivia and answering curious questions.', tags: [], url: 'http://www.youtube.com/channel/UC64UiPJwM_e9AqAd7RiD7JA' },
+    { title: 'Zebra Zone', desc: 'Zebra Zone covers videomaking, filmmaking tutorials, gear reviews, and behind-the-scenes production content.', tags: [], url: 'http://www.youtube.com/channel/UC6PIKnoGw7rJnND6_jdoo5w' },
+    { title: 'Frederic Schuller', desc: 'Frederic Schuller\'s recorded university lecture series on theoretical physics, including general relativity and quantum theory.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UC6SaWe7xeOp31Vo8cQG1oXw' },
+    { title: 'Shiva Rudra Balayogi', desc: 'Shri Shiva Rudra Balayogi, a meditation teacher in the Jangama Dhyana tradition, shares spiritual talks, bhajans, and teachings.', tags: ['Spirituality', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UC6YHFKcPK_XT96VO7xuk6RQ' },
+    { title: 'The B1M', desc: 'Covers the world\'s greatest construction and civil engineering projects.', tags: ['Engineering'], url: 'http://www.youtube.com/channel/UC6n8I1UDTKP1IWjQMg6_TwA' },
+    { title: 'Vsauce', desc: 'Michael Stevens explores mind-bending questions at the intersection of science, math, and philosophy.', tags: ['Mathematics', 'Science', 'Philosophy'], url: 'http://www.youtube.com/channel/UC6nSFpj9HTCZ5t-N3Rm3-HA' },
+    { title: 'TED Institute', desc: 'TED Institute features talks from leading companies on innovation.', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UC6riU7xaRItrH_8_P6rYsfQ' },
+    { title: 'Physics Girl', desc: 'Dianna Cowern (Physics Girl) explains physics concepts through experiments and demonstrations.', tags: ['Physics', 'Science'], url: 'http://www.youtube.com/channel/UC7DdEm33SyaTDtWYGO2CwdA' },
+    { title: 'Institute Lecture Series IITR', desc: 'IIT Roorkee\'s Institute Lecture Series featuring talks from visiting scholars and experts.', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UC7Q5GsjOpPTf8PxT6uDjRcg' },
+    { title: 'PBS Space Time', desc: 'PBS series exploring theoretical physics, cosmology, and astrophysics in depth.', tags: ['Physics', 'Astronomy', 'Space'], url: 'http://www.youtube.com/channel/UC7_gcs09iThXybpVgjHZ_7g' },
+    { title: 'Hyper Quest', desc: 'Vishal Chaurasia\'s Hyper Quest explores science, philosophy, and Indian wisdom, from quantum physics to the Upanishads.', tags: ['Physics', 'Science', 'Spirituality', 'Philosophy'], url: 'http://www.youtube.com/channel/UC8HRYUBXTHv4mJ67Y5FitSg' },
+    { title: 'Smarter Every Day 2', desc: 'SmarterEveryDay\'s second channel for extra science and engineering content.', tags: ['Engineering', 'Science'], url: 'http://www.youtube.com/channel/UC8VkNBOwvsTlFjoSnNSMmxw' },
+    { title: 'freeCodeCamp.org', desc: 'Free coding tutorials and full courses to learn programming and web development.', tags: ['Technology', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UC8butISFwT-Wl7EV0hUK0BQ' },
+    { title: 'Computerphile', desc: 'Computer science topics explained by academics and researchers at the University of Nottingham.', tags: ['Technology', 'Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UC9-y-6csu5WGm29I7JiwpnA' },
+    { title: 'VigyanRecharge Physics & Maths', desc: 'Physics and maths lectures aimed at Indian competitive exam students.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UC9HO-_eIvdyYXl7uYdDSBpA' },
+    { title: 'Wendover Productions', desc: 'Explores economics, logistics, transportation, and geography through documentary videos.', tags: ['Documentary', 'Business'], url: 'http://www.youtube.com/channel/UC9RM-iSvTu1uPJb8X5yp3EQ' },
+    { title: 'IRCTC OFFICIAL', desc: 'Official channel of IRCTC, India\'s railway catering, tourism, and ticketing corporation.', tags: [], url: 'http://www.youtube.com/channel/UC9iW6fZNhHJf8jb_j3DDmJA' },
+    { title: 'Parth G', desc: 'Physics explainer videos covering quantum mechanics, relativity, and everyday physics questions.', tags: ['Physics'], url: 'http://www.youtube.com/channel/UC9lztld5qPi-6WZ9_QIVR6g' },
+    { title: 'Astro Horizons', desc: 'Astro Horizons explores space, astronomy, and cosmic mysteries through narrated, cinematic storytelling.', tags: ['Astronomy', 'Space'], url: 'http://www.youtube.com/channel/UC9pYOJPB5UYlMlGKKZWo-Bw' },
+    { title: 'Quantum Light University of Sheffield', desc: 'University of Sheffield\'s channel on quantum physics research and outreach.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UC9v2Hq8M6zXmxY3OPytS2pQ' },
+    { title: 'BotLab Dynamics', desc: 'BotLab Dynamics, an IIT Delhi-incubated company, showcases large-scale drone light shows for major events and celebrations.', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UCA1t5ofMOT9noyLQh5PuwwA' },
+    { title: 'Science and fun', desc: 'Explains science fundamentals in an easy, fun way for students, with companion online classes (#ScienceIsFun).', tags: ['Science'], url: 'http://www.youtube.com/channel/UCACU6FM4RgOgX0IHB7dudFA' },
+    { title: 'Abby V', desc: 'Abby V, a Toronto-based singer and composer, performs Indian classical (Hindustani and Carnatic), Western classical, and pop music.', tags: ['Music'], url: 'http://www.youtube.com/channel/UCAQ8PsGtcAl5r8415ueeN1Q' },
+    { title: 'TIFR Condensed Matter Interaction Club', desc: 'TIFR\'s Condensed Matter Interaction Club shares physics seminars and talks.', tags: ['Physics'], url: 'http://www.youtube.com/channel/UCAS_5lvVonCN1lYjL1cA2vA' },
+    { title: 'TED', desc: 'TED Talks featuring ideas worth spreading across science, technology, and design.', tags: ['Technology', 'Science'], url: 'http://www.youtube.com/channel/UCAuUUnT6oDeKwE6v1NGQxug' },
+    { title: 'Epified', desc: 'Animated storytelling channel bringing Indian mythology, epics, and folktales to life through whiteboard animation.', tags: ['Mythology & Culture', 'Art & Media'], url: 'http://www.youtube.com/channel/UCAwv_EtbjgwQwezrS4z9WMQ' },
+    { title: 'Asees Records', desc: 'Asees Records shares daily Sikh devotional music, including Shabad Gurbani Kirtan and Kavishri.', tags: ['Spirituality', 'Music'], url: 'http://www.youtube.com/channel/UCB6O-lW550ogJXkOvl3Zkyw' },
+    { title: 'chaiandwhy', desc: 'Chai and Why, a TIFR Outreach initiative, documents informal public discussions on science over tea.', tags: ['Science'], url: 'http://www.youtube.com/channel/UCB8fITJIwkZTqceQK0Zq3PA' },
+    { title: 'Marques Brownlee', desc: 'Marques Brownlee (MKBHD) reviews the latest consumer tech and gadgets.', tags: ['Technology'], url: 'http://www.youtube.com/channel/UCBJycsmduvYEL83R_U4JriQ' },
+    { title: 'ACU Engineering and Physics', desc: 'Official channel of the Engineering and Physics department at Abilene Christian University.', tags: ['Physics', 'Engineering', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCBRjSuLcAlZLnJOMYqFhrMw' },
+    { title: 'Chemteacherphil', desc: 'High school chemistry teacher Phil Cook explains the chemistry behind everyday phenomena and historical science.', tags: ['Science', 'History', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCBVY4zJr4qTXdPlMus1VxqA' },
+    { title: 'Tom Scott', desc: 'Tom Scott visits interesting places and explains unusual facts about the world.', tags: [], url: 'http://www.youtube.com/channel/UCBa659QWEk1AI4Tg--mrJ2A' },
+    { title: 'TED Fellow', desc: 'Talks from the TED Fellows program highlighting innovators worldwide.', tags: [], url: 'http://www.youtube.com/channel/UCBjBZmguQzn6WCYR7DQykLw' },
+    { title: 'HBCSE-TIFR', desc: 'Official channel of the Homi Bhabha Centre for Science Education (TIFR), India\'s nodal centre for science and math Olympiad programmes.', tags: ['Mathematics', 'Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCBoz08Kb4GiVIanFv8VUwmg' },
+    { title: 'Nilesh Oak', desc: 'Author and researcher Nilesh Oak\'s talks on Indian antiquity, ancient astronomy, and the chronology of epics like the Mahabharata and Ramayana.', tags: ['Astronomy', 'Mythology & Culture'], url: 'http://www.youtube.com/channel/UCC491ukW6GRzMdKlDTKsBqQ' },
+    { title: 'AsapSCIENCE', desc: 'Animated videos answering popular science questions in a fun, accessible way.', tags: ['Science', 'Art & Media'], url: 'http://www.youtube.com/channel/UCC552Sd-3nyi_tk2BudLUzA' },
+    { title: 'Big Scientific Questions', desc: 'Big Scientific Questions explores fundamental questions in science, digging into the small details behind big ideas.', tags: ['Science'], url: 'http://www.youtube.com/channel/UCCBUAMPpXEqy_pq9vG0aR4Q' },
+    { title: 'AWSAR DST', desc: 'AWSAR, an Indian government (DST) initiative to encourage researchers to popularize their science writing.', tags: ['Science'], url: 'http://www.youtube.com/channel/UCCC5wDOUK67jNv3Hg4oZf0g' },
+    { title: 'NPTEL IIT Guwahati', desc: 'NPTEL video lectures produced by IIT Guwahati faculty for engineering and science courses.', tags: ['Engineering', 'Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCCDzHkpuIuD1ZC0wsCXUuPQ' },
+    { title: 'AlphaPhoenix', desc: 'Engineering and physics experiments exploring how things work through hands-on builds.', tags: ['Physics', 'Engineering', 'Science'], url: 'http://www.youtube.com/channel/UCCWeRTgd79JL0ilH0ZywSJA' },
+    { title: 'Nico Orce', desc: 'Nuclear physics lectures and research talks from Professor Nico Orce.', tags: ['Physics', 'Nuclear Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCCZK0umDsxd9v5YExXJsTKw' },
+    { title: 'Berkeley Lab', desc: 'Official channel of Lawrence Berkeley National Laboratory, covering scientific research.', tags: ['Science'], url: 'http://www.youtube.com/channel/UCCgnbEL97epv-RhIZWHEhuA' },
+    { title: 'Serious Science', desc: 'Interviews and lectures from leading scientists on cutting-edge research.', tags: ['Science', 'Education & Lectures', 'Podcast'], url: 'http://www.youtube.com/channel/UCComKOHir2WrDuRZXP8DT-A' },
+    { title: 'THE HINDU SAGA - Hindi', desc: 'Shares Hindu mythology, Vedic stories, and Indian history in Hindi, drawn from various historical and religious sources.', tags: ['Mythology & Culture', 'History'], url: 'http://www.youtube.com/channel/UCD06QSRuVDZxcLHjIyuUNCA' },
+    { title: 'Fermilab', desc: 'Official channel of Fermilab, a U.S. national laboratory for particle physics research.', tags: ['Physics', 'Nuclear Science'], url: 'http://www.youtube.com/channel/UCD5B6VoXv41fJ-IW8Wrhz9A' },
+    { title: 'INO Project', desc: 'Official channel of the India-based Neutrino Observatory (INO), a mega-science project studying atmospheric neutrinos.', tags: ['Astronomy', 'Nuclear Science', 'Science'], url: 'http://www.youtube.com/channel/UCDBNQLBg39hWfVKl5cv0sWg' },
+    { title: 'PowerTrain By Aakash Bhavsar', desc: 'Aakash Bhavsar\'s PowerTrain covers India\'s infrastructure, megaprojects, economy, and history.', tags: ['Engineering', 'History'], url: 'http://www.youtube.com/channel/UCDUxlJNxIf6sSag7_A395Bg' },
+    { title: 'Fit Tuber Hindi', desc: 'Fit Tuber\'s Hindi-language channel on fitness, diet, and workout guidance.', tags: ['Fitness & Health'], url: 'http://www.youtube.com/channel/UCDWVNwQce16D16tPc5NBYlQ' },
+    { title: 'Framework', desc: 'Official channel of Framework Computer, a company making sustainable, repairable consumer electronics.', tags: ['Technology'], url: 'http://www.youtube.com/channel/UCDiKw3GnFIwyNJBzhCoRI-Q' },
+    { title: 'MIT OpenCourseWare', desc: 'Free lecture videos and course materials from MIT\'s OpenCourseWare initiative.', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UCEBb1b_L6zDS3xTUrIALZOw' },
+    { title: 'PictureTheRecipe', desc: 'Noreen Hiskey shares home-cooked recipes with an emphasis on food styling and photography.', tags: ['Cooking & Food'], url: 'http://www.youtube.com/channel/UCEBtDzuikFw24LPsgGyW1AQ' },
+    { title: 'Indian Rail Dynamics', desc: 'Ashish Rathore\'s Indian Rail Dynamics covers railfanning, rail technology, and Indian Railways infrastructure news.', tags: ['Engineering', 'Technology', 'News & Politics'], url: 'http://www.youtube.com/channel/UCEH0aXjVwaK65Va_OPRSWBw' },
+    { title: 'Chef Ranveer Brar', desc: 'Chef Ranveer Brar shares Indian and international recipes and cooking techniques.', tags: ['Cooking & Food'], url: 'http://www.youtube.com/channel/UCEHCDn_BBnk3uTK1M64ptyw' },
+    { title: 'Steve Mould', desc: 'Steve Mould demonstrates surprising science phenomena and how things work.', tags: ['Science'], url: 'http://www.youtube.com/channel/UCEIwxahdLz7bap-VDs9h35A' },
+    { title: 'Jeremy Ethier', desc: 'Jeremy Ethier breaks down the science of fitness, training, and nutrition.', tags: ['Science', 'Fitness & Health'], url: 'http://www.youtube.com/channel/UCERm5yFZ1SptUEU4wZ2vJvw' },
+    { title: 'DMRC (Delhi Metro Rail Corporation)', desc: 'Official channel of the Delhi Metro Rail Corporation.', tags: [], url: 'http://www.youtube.com/channel/UCEbfdqyTPxuy_W5dYokw6CQ' },
+    { title: 'Physics', desc: 'General physics education and lecture content.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCEm0bTWoJXe2vr6gzNiANIw' },
+    { title: 'Physics Valley', desc: 'Physics lectures and explanations aimed at students.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCEpAHteY8euZGy8wSM03cCw' },
+    { title: 'Kyle Hill', desc: 'Kyle Hill explains science topics ranging from nuclear engineering to comic-book physics.', tags: ['Physics', 'Nuclear Science', 'Engineering', 'Science', 'Art & Media'], url: 'http://www.youtube.com/channel/UCFbtcTaMFnOAP0pFO1L8hVw' },
+    { title: 'Jordan Peterson Fan Channel', desc: 'Shares short clips and highlights from Jordan B. Peterson\'s talks and lectures.', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UCFh3dBRQToGvu8bjr-CdV4Q' },
+    { title: 'Looking Glass Universe', desc: 'Animated explanations of quantum mechanics and theoretical physics concepts.', tags: ['Physics', 'Astronomy', 'Art & Media'], url: 'http://www.youtube.com/channel/UCFk__1iexL3T5gvGcMpeHNA' },
+    { title: 'Andy Stapleton', desc: 'Andy Stapleton shares advice on academia, PhD study, and research careers.', tags: [], url: 'http://www.youtube.com/channel/UCFqXmQ56-Gp1rIKa-GoAJvQ' },
+    { title: 'onRec IITR', desc: 'IIT Roorkee\'s official recorded event coverage (onRec).', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UCFwC4MUAmLNYT2kHf2S2JLg' },
+    { title: 'Children Of Immortal Bliss', desc: 'Shares spiritual teachings, devotional songs, and discussions inspired by Vedanta and Swami Vivekananda\'s writings.', tags: ['Spirituality', 'Music', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCFxKQX0tfkGSMtqHHD4IlKw' },
+    { title: 'ARIES Nainital', desc: 'Official channel of ARIES Nainital, an Indian institute for observational astronomy research.', tags: ['Astronomy', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCG2LKvORv_L2vBL4uCuojnQ' },
+    { title: 'TIFR Students\' Society', desc: 'TIFR Students\' Society, representing student activities and events at the Tata Institute of Fundamental Research.', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UCGGgnYhw13z5x5GxJJQO5gw' },
+    { title: 'Cool Worlds', desc: 'Astronomer David Kipping explores exoplanets, astrophysics, and the search for life beyond Earth.', tags: ['Astronomy'], url: 'http://www.youtube.com/channel/UCGHZpIpAWJQ-Jy_CeCdXhMA' },
+    { title: 'FloatHeadPhysics', desc: 'FloatHeadPhysics explains physics concepts through short, focused videos.', tags: ['Physics'], url: 'http://www.youtube.com/channel/UCGfFUc6eWxfbtjYeun6r9xg' },
+    { title: 'mobiscrub', desc: 'Karan Binani\'s mobiscrub covers mobile tech reviews, comparisons, and troubleshooting guides for smartphones and gadgets.', tags: ['Technology'], url: 'http://www.youtube.com/channel/UCGfluwZUeQNG5HvHuKfSKgw' },
+    { title: 'Corning Incorporated', desc: 'Corporate channel of Corning Incorporated, a materials science and glass technology company.', tags: ['Technology', 'Science'], url: 'http://www.youtube.com/channel/UCGyKit14usd5PNw_nZ-8gKQ' },
+    { title: 'Rational Thinker', desc: 'Explores the history of science, its major discoveries, debates, and the people who advanced human understanding.', tags: ['Science', 'History'], url: 'http://www.youtube.com/channel/UCH3FflSXrTrSuwhqhFbqvDw' },
+    { title: 'Be Smart', desc: 'PBS Digital Studios series exploring science, nature, and the natural world.', tags: ['Science'], url: 'http://www.youtube.com/channel/UCH4BNI0-FOK2dMXoFtViWHw' },
+    { title: 'Helmholtz-Zentrum Dresden-Rossendorf (HZDR)', desc: 'Research videos from the Helmholtz-Zentrum Dresden-Rossendorf (HZDR), covering energy, materials, and health research.', tags: ['Fitness & Health'], url: 'http://www.youtube.com/channel/UCHdoU01_UccuQMsGOG9h81g' },
+    { title: 'Manish Vyas', desc: 'Manish Vyas, a spiritual musician known for meditative and devotional music.', tags: ['Spirituality', 'Music'], url: 'http://www.youtube.com/channel/UCHkWoCrwOr8qSlxwEox5LEA' },
+    { title: 'Veritasium', desc: 'Derek Muller\'s channel exploring physics, science, and engineering through experiments and storytelling.', tags: ['Physics', 'Engineering', 'Science'], url: 'http://www.youtube.com/channel/UCHnyfMqiRRG1u-2MsSQLbXA' },
+    { title: 'DrPhysicsA', desc: 'University physics lectures and tutorials covering mechanics, electromagnetism, and more.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCIVaddFslWk1TFoKNrvh99Q' },
+    { title: 'Physics Explained', desc: 'Dr. Yakov Shnir explores advanced physics topics like general relativity, quantum mechanics, and string theory with full mathematical detail.', tags: ['Physics', 'Mathematics'], url: 'http://www.youtube.com/channel/UCIZ5ZOeiXYbmKTl_85ghNPw' },
+    { title: 'IPA Roorkee Chapter', desc: 'Roorkee Chapter of the Indian Physics Association, sharing physics talks and lectures in collaboration with IIT Roorkee.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCIcPgy-6KZscRemL0fITGRA' },
+    { title: 'ElectroBOOM', desc: 'Mehdi Sadaghdar combines electronics education with comedic, often shocking experiments.', tags: ['Technology', 'Science', 'Comedy', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCJ0-OtVpF0wOKEqT2Z1HEtA' },
+    { title: 'Physics Videos by Eugene Khutoryansky', desc: 'Animated visualizations explaining physics and mathematics concepts.', tags: ['Physics', 'Mathematics', 'Art & Media'], url: 'http://www.youtube.com/channel/UCJ0yBou72Lz9fqeMXh9mkog' },
+    { title: 'Indian Diplomacy', desc: 'Official channel of the Indian Ministry of External Affairs, covering India\'s diplomacy and foreign policy.', tags: ['News & Politics'], url: 'http://www.youtube.com/channel/UCJyP-OtuzlRV-r-3vR9qQTg' },
+    { title: 'The Secrets of the Universe', desc: 'Explores mysteries of physics, cosmology, and the universe.', tags: ['Physics', 'Astronomy'], url: 'http://www.youtube.com/channel/UCK-0srt5hdY5m6Zos_NlJZg' },
+    { title: 'Graviton Institute', desc: 'Graviton Institute offers free lecture series for NET/JRF, GATE, and IIT JAM physics and electronics exam aspirants.', tags: ['Physics', 'Technology', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCK-IHaIisR7JFkrkaiTi8kg' },
+    { title: 'LIGO-India Education & Public Outreach', desc: 'Education and public outreach for LIGO-India, part of the global gravitational-wave observatory network.', tags: ['Astronomy', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCK5SGACQCKYkyQNvHzvWSig' },
+    { title: 'Cogito', desc: 'Domhnall O Luchrain\'s Cogito uses maps, stories, and motion graphics to explain power, economics, history, and world events.', tags: ['History', 'Business'], url: 'http://www.youtube.com/channel/UCKMnl27hDMKvch--noWe5CA' },
+    { title: 'Radioactive Drew', desc: 'Drew explores radioactive antiques, minerals, and historical nuclear artifacts with a Geiger counter.', tags: ['Nuclear Science', 'History'], url: 'http://www.youtube.com/channel/UCKOFpW_wVwJ7ePdNMoa7bkA' },
+    { title: 'Think School', desc: 'Think School breaks down business case studies and strategy in Hindi and English.', tags: ['Business'], url: 'http://www.youtube.com/channel/UCKZozRVHRYsYHGEyNKuhhdA' },
+    { title: 'Institute Alumni Relations Cell - IIT Roorkee', desc: 'IIT Roorkee\'s Institute Alumni Relations Cell, connecting alumni with the institute.', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UCKeVfr6Q6qz6BQGuc4dC2Yw' },
+    { title: 'Stanford Advanced Materials', desc: 'Corporate channel of Stanford Advanced Materials, a supplier of specialty and advanced materials.', tags: [], url: 'http://www.youtube.com/channel/UCKg7ZBD6QlD29TnIMxJhkzQ' },
+    { title: 'The Cyber Zeel', desc: 'Zeel Patel\'s The Cyber Zeel shares teachings on Siddha spiritual methods, meditation, and personal development.', tags: ['Spirituality', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCKjFQcRLQcwfGWbFKQljouA' },
+    { title: 'Anubhav Singh Bassi', desc: 'Indian stand-up comedian Anubhav Singh Bassi\'s comedy specials and stories.', tags: ['Comedy'], url: 'http://www.youtube.com/channel/UCKnZHF24IV9PT0cdSdHoWug' },
+    { title: 'Scott Hanselman', desc: 'Scott Hanselman covers software development, .NET, and programming culture at Microsoft.', tags: ['Technology'], url: 'http://www.youtube.com/channel/UCL-fHOdarou-CR2XUmK48Og' },
+    { title: 'Indian Physics Association', desc: 'Community and resources for physicists and physics students in India.', tags: ['Physics'], url: 'http://www.youtube.com/channel/UCLANT1E4fYEMb8fVerMsQRA' },
+    { title: 'thecuriousengineer', desc: 'Engineering explainer videos covering how machines, structures, and technology work.', tags: ['Engineering', 'Technology'], url: 'http://www.youtube.com/channel/UCLMgZUQzqdZ6z-_13OWUX7g' },
+    { title: 'BattleKing', desc: 'Gaming channel featuring PC and PlayStation walkthroughs, boss fights, and Hindi commentary.', tags: ['Gaming'], url: 'http://www.youtube.com/channel/UCLOgQ4E8S-8okzAz18X7CAA' },
+    { title: 'Vox', desc: 'Explainer journalism covering news, politics, and culture.', tags: ['News & Politics'], url: 'http://www.youtube.com/channel/UCLXo7UDZvByw2ixzpQCufnA' },
+    { title: 'Jordan B Peterson', desc: 'Psychologist Jordan B. Peterson\'s lectures and interviews on psychology, philosophy, and culture.', tags: ['Philosophy', 'Education & Lectures', 'Podcast'], url: 'http://www.youtube.com/channel/UCL_f53ZEJxp8TtlOkHwMV9Q' },
+    { title: 'Vigyan Recharge', desc: 'Physics and mathematics lectures aimed at Indian competitive exam students.', tags: ['Physics', 'Mathematics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCLverqV6G5MER0YXM4LienQ' },
+    { title: 'MovementbyDavid', desc: 'MovementbyDavid shares mobility, movement training, and functional fitness content.', tags: ['Fitness & Health'], url: 'http://www.youtube.com/channel/UCM2ra7Od2jliHB9TLPKt76w' },
+    { title: 'Practical Engineering', desc: 'Explains the engineering behind infrastructure like dams, bridges, and water systems.', tags: ['Engineering'], url: 'http://www.youtube.com/channel/UCMOqf8ab-42UUQIdVoKwjlQ' },
+    { title: 'Highly Entropic Mind', desc: 'Highly Entropic Mind covers a wide, unpredictable range of interesting and thought-provoking topics, from simulation theory to AI.', tags: [], url: 'http://www.youtube.com/channel/UCMethyLk5GtQUyH6Us-dSmw' },
+    { title: 'आचार्य प्रशान्त - Acharya Prashant', desc: 'Acharya Prashant\'s talks on Vedanta, spirituality, and self-inquiry.', tags: ['Spirituality', 'Philosophy'], url: 'http://www.youtube.com/channel/UCMgapddJymOC6MBOiOqia1A' },
+    { title: 'IEEE Young Professionals', desc: 'IEEE Young Professionals\' channel for early-career engineers and technologists.', tags: ['Engineering'], url: 'http://www.youtube.com/channel/UCN1IB9Qq9UIp3lV3SHPfTYg' },
+    { title: 'OverSimplified', desc: 'Animated summaries of historical wars and events.', tags: ['History', 'Art & Media'], url: 'http://www.youtube.com/channel/UCNIuvl7V8zACPpTmmNIqP2A' },
+    { title: 'iiptv', desc: 'Shares content related to theoretical physics research from an international physics institute.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCNaSeAlXcBDk-pWiqf9Ab6A' },
+    { title: 'PhysicsIsFun', desc: 'An MIT physicist shares short, fun physics lessons and explainers.', tags: ['Physics'], url: 'http://www.youtube.com/channel/UCNb9vykjjBoUh2EXfBQYR6g' },
+    { title: 'Alux.com', desc: 'Alux covers business, luxury lifestyle, and self-improvement content.', tags: ['Business'], url: 'http://www.youtube.com/channel/UCNjPtOCvMrKY5eLwr_-7eUg' },
+    { title: 'International Centre for Theoretical Sciences', desc: 'Official channel of the International Centre for Theoretical Sciences, India.', tags: [], url: 'http://www.youtube.com/channel/UCO3xnVTHzB7l-nc8mABUJIQ' },
+    { title: 'Easy Flute School', desc: 'Murtaza Kabir Murad\'s Easy Flute School teaches bansuri (bamboo flute) technique and Indian classical ragas for free.', tags: ['Music', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCO4tSBJyZBO6LcWGkV7azkA' },
+    { title: 'PublicResourceOrg', desc: 'Carl Malamud\'s nonprofit channel sharing public-domain government and educational recordings.', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UCO9Q5_D6tItyoilmDogexng' },
+    { title: 'Physics IITR', desc: 'Physics department channel at IIT Roorkee.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCOBEAxWsKtejlteZqkX0QwA' },
+    { title: 'fern', desc: 'fern makes narrated video essays exploring science, technology, and how everyday systems work.', tags: ['Technology', 'Science', 'Art & Media'], url: 'http://www.youtube.com/channel/UCODHrzPMGbNv67e84WDZhQQ' },
+    { title: 'AbbyViral', desc: 'New Delhi-based creator covering rap, branding, business, and personal growth for a young audience.', tags: ['Music', 'Business'], url: 'http://www.youtube.com/channel/UCOHZV86RSC9I_TUTkRFD8zQ' },
+    { title: 'Biturbo Media', desc: 'Prakash Gupta\'s Biturbo Media covers automotive history, science, and in-depth car reviews.', tags: ['Science', 'History', 'Automotive'], url: 'http://www.youtube.com/channel/UCOMQHhKOG9fk4jGYw_uhVhA' },
+    { title: 'Tata Institute of Fundamental Research', desc: 'Official channel of the Tata Institute of Fundamental Research, India.', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UCOP5Wcw4Go7Lobmigzs_LwA' },
+    { title: 'India Science', desc: 'India Science, a government-backed platform for popular science content and outreach in India.', tags: ['Science'], url: 'http://www.youtube.com/channel/UCOS_nAtvIg26Qrv7UNC8kzw' },
+    { title: 'Prof. Daya Shankar Kulshreshtha', desc: 'Retired Delhi University physics professor Daya Shankar Kulshreshtha shares quantum mechanics lecture series and physics talks.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCO_ROk6q8wAIIMMAQ7ki_vA' },
+    { title: 'For the Love of Physics', desc: 'Physics concepts explained with a focus on intuition and problem solving.', tags: ['Physics'], url: 'http://www.youtube.com/channel/UCOfLm6gZGt3vwTMKRg-irhg' },
+    { title: 'Physics with Elliot', desc: 'Physics explainer videos aimed at students and enthusiasts.', tags: ['Physics'], url: 'http://www.youtube.com/channel/UCP3alkHEJhoxTpy3iVON-lg' },
+    { title: 'Dr Pal', desc: 'Dr. Pal shares educational content on health, science, or motivation aimed at Indian audiences.', tags: ['Science', 'Fitness & Health', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCP4k407eomZThGHo_9sgMkg' },
+    { title: 'Waleska Herrera', desc: 'Waleska Herrera and her brother review and react to music from around the world across genres and regions.', tags: ['Music'], url: 'http://www.youtube.com/channel/UCPAz3hWHiBC-c1x4K0-atsg' },
+    { title: 'James Lincoln', desc: 'James Lincoln, a physics teacher, demonstrates physics experiments for students.', tags: ['Physics', 'Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCPFMJN19E7-ncgE9aBAIElg' },
+    { title: 'PHYSICA by Dr. Bhanu Ranjan', desc: 'Dr. Bhanu Ranjan, a physics PhD from IIT Roorkee, shares free physics education content.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCPTwiYKAh8_DLwTRdELV-_Q' },
+    { title: 'ABHI KA REVIEW', desc: 'Abhi Ka Review offers concise, honest movie reviews in a signature 3-4 minute format.', tags: [], url: 'http://www.youtube.com/channel/UCPWqbr91cfbtLHZrHM5GItg' },
+    { title: 'CSE IIT Gandhinagar', desc: 'Computer Science and Engineering department channel at IIT Gandhinagar.', tags: ['Engineering', 'Technology', 'Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCPYUnvUV3CiMmkhfYME48QQ' },
+    { title: 'IIT Guwahati', desc: 'Official channel of the Indian Institute of Technology Guwahati.', tags: ['Technology', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCPm2vuTGBM80v0tEecjP3Kw' },
+    { title: 'UCLA', desc: 'Official channel of UCLA, featuring lectures, research, and campus events.', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UCPpw6jRIL1B9nU0k7-GujOQ' },
+    { title: 'Adnan Manzoor', desc: 'Kashmiri rabab musician Adnan Manzoor shares music performances alongside educational and career-related content.', tags: ['Music', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCPwbr2it9gsZc8ERZyXQ7NA' },
+    { title: 'BeerBiceps', desc: 'Ranveer Allahbadia\'s (BeerBiceps) podcast on business, fitness, and self-improvement.', tags: ['Fitness & Health', 'Podcast', 'Business'], url: 'http://www.youtube.com/channel/UCPxMZIFE856tbTfdkdjzTSQ' },
+    { title: 'The Cherno', desc: 'Yan Chernikov (The Cherno) teaches game engine architecture and C++ programming.', tags: ['Technology', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCQ-W1KE9EYfdxhL6S4twUNw' },
+    { title: 'Om Dhumatkar', desc: 'Om Dhumatkar shares talks on Hindu philosophy, the Bhagavad Gita, and spirituality for modern seekers.', tags: ['Spirituality', 'Mythology & Culture', 'Philosophy'], url: 'http://www.youtube.com/channel/UCQTX4YzGscwEq282wWDkJMQ' },
+    { title: 'Vigyan Vidushi', desc: 'Vigyan Vidushi, a summer physics programme for women M.Sc. students in India, featuring lectures and mentorship sessions.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCQ_QSNTFQEeXwgMskFV2QtA' },
+    { title: 'Physino', desc: 'Physicist Jing Liu shares research, education, and Geant4 simulation tutorials in experimental particle physics.', tags: ['Physics', 'Nuclear Science', 'Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCQd4wp1ehUPXVHLjqYAMR3g' },
+    { title: 'Real Engineering', desc: 'Explains engineering concepts and how major infrastructure and technology work.', tags: ['Engineering', 'Technology'], url: 'http://www.youtube.com/channel/UCR1IuLEqb6UEA_zQ81kwXfg' },
+    { title: 'IKS Committee IIT Roorkee', desc: 'The Indian Knowledge Systems (IKS) Committee at IIT Roorkee, promoting traditional Indian knowledge and heritage.', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UCR2T7JehiG6qEYWh-qkhN1w' },
+    { title: 'Abide By Reason', desc: 'Dan Kosakowski\'s Abide By Reason makes advanced math and physics, from quantum mechanics to Lagrangian mechanics, accessible to a broad audience.', tags: ['Physics', 'Mathematics'], url: 'http://www.youtube.com/channel/UCR5oNJW45ALErR_OL5bpi_w' },
+    { title: 'Coin Bureau Podcast', desc: 'News, analysis, and interviews on cryptocurrency and blockchain.', tags: ['Finance', 'News & Politics', 'Podcast'], url: 'http://www.youtube.com/channel/UCR93yACeNzxMSk6Y1cHM2pw' },
+    { title: 'melodysheep', desc: 'John D. Boswell (melodysheep) creates space documentaries and music-driven science videos.', tags: ['Space', 'Science', 'Music'], url: 'http://www.youtube.com/channel/UCR9sFzaG9Ia_kXJhfxtFMBA' },
+    { title: 'Just Have a Think', desc: 'Covers climate change, clean energy, and emerging technology solutions.', tags: ['Technology'], url: 'http://www.youtube.com/channel/UCRBwLPbXGsI2cJe9W1zfSjQ' },
+    { title: 'The Friday Checkout', desc: 'The Friday Checkout offers chill, thoughtful discussion and analysis of the week\'s biggest tech news.', tags: ['Technology', 'News & Politics'], url: 'http://www.youtube.com/channel/UCRG_N2uO405WO4P3Ruef9NA' },
+    { title: 'SubjectZeroX', desc: 'SubjectZeroX explores scientific concepts and breakthroughs in energy, space travel, and advanced technology.', tags: ['Technology', 'Space', 'Science'], url: 'http://www.youtube.com/channel/UCRXRbi80k0_vcIfgpOSerTg' },
+    { title: 'uncomplication', desc: 'Ryan Stover\'s Uncomplication covers philosophy, crypto, personal growth, and life\'s bigger questions.', tags: ['Philosophy', 'Finance'], url: 'http://www.youtube.com/channel/UCRsAEo9tcSqPnPdcgYFCbog' },
+    { title: 'IIT Hyderabad', desc: 'Official channel of the Indian Institute of Technology Hyderabad.', tags: ['Technology', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCRzG67KYJuTbL-Te2objPTw' },
+    { title: 'Daily Max', desc: 'Daily Max shares travel vlogs, food adventures, and insider tips from around the world, especially in India.', tags: [], url: 'http://www.youtube.com/channel/UCS0tiaCChXRF_XpU5TmlWSQ' },
+    { title: 'Gareeb Scientist', desc: 'Gareeb Scientist delivers Hindi-language educational videos on Indian science, space technology, and research.', tags: ['Technology', 'Space', 'Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCS1abmNrZSkWM1vq-sMm63g' },
+    { title: 'Words of akaal', desc: 'Sikh religious, cultural, and news programming delivering Sikh values, produced by Akaal Channel.', tags: ['Technology', 'Spirituality', 'News & Politics'], url: 'http://www.youtube.com/channel/UCS6KsvP0YKOrAzvd3HSd2tA' },
+    { title: 'Lex Fridman', desc: 'Lex Fridman\'s long-form podcast interviews on AI, science, technology, and philosophy.', tags: ['Technology', 'Science', 'Philosophy', 'Podcast'], url: 'http://www.youtube.com/channel/UCSHZKyawb77ixDdsGog4iWA' },
+    { title: 'H C VERMA', desc: 'H.C. Verma, noted physics textbook author, on physics teaching and education in India.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCST7O07V0HwBkK_wCB6EB5g' },
+    { title: 'World Science Festival', desc: 'Talks and events from the World Science Festival exploring science and culture.', tags: ['Science'], url: 'http://www.youtube.com/channel/UCShHFwKyhcDo3g7hr4f1R8A' },
+    { title: 'Microsoft HoloLens', desc: 'Official Microsoft channel for HoloLens and mixed reality technology.', tags: ['Technology'], url: 'http://www.youtube.com/channel/UCT2rZIAL-zNqeK1OmLLUa6g' },
+    { title: 'AERB Webinar', desc: 'Webinars from the Atomic Energy Regulatory Board (AERB), India\'s nuclear regulatory authority.', tags: ['Nuclear Science'], url: 'http://www.youtube.com/channel/UCT8rSpzH4festsxskR0BkQw' },
+    { title: 'Stories With Akshit', desc: 'Akshit Sharma\'s Stories With Akshit explores and explains stories and concepts from Hindu mythology and scripture.', tags: ['Mythology & Culture'], url: 'http://www.youtube.com/channel/UCT9QKhkC0y_EI1SvPeJhZtg' },
+    { title: 'Greenpeace International', desc: 'Global environmental campaigns and news from Greenpeace International.', tags: ['News & Politics'], url: 'http://www.youtube.com/channel/UCTDTSx8kbxGECZJxOa9mIKA' },
+    { title: 'JINA-CEE & CeNAM', desc: 'JINA-CEE and CeNAM, U.S. centers for nuclear astrophysics research and education.', tags: ['Astronomy', 'Nuclear Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCTa4Bt0wQ6mYduyOCvsYR5A' },
+    { title: 'Quanta Magazine', desc: 'Quanta Magazine\'s videos on cutting-edge research in math, physics, and computer science.', tags: ['Physics', 'Mathematics', 'Technology', 'Science'], url: 'http://www.youtube.com/channel/UCTpmmkp1E4nmZqWPS-dl5bg' },
+    { title: 'The Institute of Art and Ideas', desc: 'The Institute of Art and Ideas hosts debates and talks on philosophy, science, and culture.', tags: ['Science', 'Philosophy', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCTsiZiMomJo6FOyiBaFeaIw' },
+    { title: '3Blue1Brown हिंदी', desc: '3Blue1Brown\'s math videos dubbed and adapted for a Hindi-speaking audience.', tags: ['Mathematics'], url: 'http://www.youtube.com/channel/UCU1gppH-Msk5RgXIsJ91SJw' },
+    { title: 'minutephysics', desc: 'Short, simple explanations of physics concepts by Henry Reich.', tags: ['Physics'], url: 'http://www.youtube.com/channel/UCUHW94eEFW7hkUMVaZz4eDg' },
+    { title: 'The Slow Mo Guys', desc: 'Gavin and Dan film everyday activities and experiments in extreme slow motion.', tags: ['Science'], url: 'http://www.youtube.com/channel/UCUK0HBIBWgM2c4vsPhkYY4w' },
+    { title: 'Piled Higher and Deeper (PHD Comics)', desc: 'Animated comic strip and videos about the trials of academic and grad-school life.', tags: ['Art & Media'], url: 'http://www.youtube.com/channel/UCUL-pmhmDcZDwsA4cX2HO5w' },
+    { title: 'Sanskrit Club IIT Roorkee', desc: 'Sanskrit Club at IIT Roorkee, promoting the study and appreciation of Sanskrit.', tags: ['Mythology & Culture', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCUSJtvBOvimvpkzVP4NGmsw' },
+    { title: 'JK Brickworks', desc: 'Builds and showcases intricate LEGO creations and mechanisms.', tags: [], url: 'http://www.youtube.com/channel/UCUaiGrBfRCaC6pL7ZnZjWbg' },
+    { title: 'SciShow Psych', desc: 'SciShow\'s spin-off channel exploring psychology and the human mind.', tags: ['Philosophy'], url: 'http://www.youtube.com/channel/UCUdettijNYvLAm4AixZv4RA' },
+    { title: 'magnify', desc: 'Magnify shared short-form videos on science and culture.', tags: ['Science'], url: 'http://www.youtube.com/channel/UCUi2SFPyyDNcsH2ZGpHyQIQ' },
+    { title: 'NASI Delhi Chapter', desc: 'Delhi Chapter of the National Academy of Sciences, India (NASI).', tags: [], url: 'http://www.youtube.com/channel/UCUsrBlPi57NZyZQOqkfRU4w' },
+    { title: 'Cars24', desc: 'Official channel of Cars24, an Indian online marketplace for buying and selling used cars.', tags: ['Automotive'], url: 'http://www.youtube.com/channel/UCV-CPspQhwTsaiftR4JvT0w' },
+    { title: 'The Thought Emporium', desc: 'Justin Atkin explores biology, chemistry, and DIY science projects.', tags: ['Science'], url: 'http://www.youtube.com/channel/UCV5vCi3jPJdURZwAOO_FNfQ' },
+    { title: 'TEDPrizeChannel', desc: 'Archive of talks from TED Prize winners\' initiatives.', tags: ['History'], url: 'http://www.youtube.com/channel/UCV8cNYL6xPS-MxkQ2BTsX6Q' },
+    { title: 'Labour Law Advisor', desc: 'Explains Indian personal finance, tax, and labour law topics.', tags: ['Finance'], url: 'http://www.youtube.com/channel/UCVOTBwF0vnSxMRIbfSE_K_g' },
+    { title: 'VideoFromSpace', desc: 'Space.com\'s video channel featuring space news, launches, and footage.', tags: ['Space', 'News & Politics'], url: 'http://www.youtube.com/channel/UCVTomc35agH1SM6kCKzwW_g' },
+    { title: 'Dave2D', desc: 'Dave Lee reviews laptops, phones, and other consumer technology.', tags: ['Technology'], url: 'http://www.youtube.com/channel/UCVYamHliCI9rw1tHR1xbkfw' },
+    { title: 'ScienceClic English', desc: 'ScienceClic\'s English channel creates animated explainers on relativity, physics, and astronomy.', tags: ['Physics', 'Astronomy', 'Art & Media'], url: 'http://www.youtube.com/channel/UCWvq4kcdNI1r1jZKFw9TiUA' },
+    { title: 'Vir Das COMEDY', desc: 'Comedian Vir Das\'s channel featuring stand-up specials and comedy sketches.', tags: ['Comedy'], url: 'http://www.youtube.com/channel/UCX2xI6iQR70IWlpi23V0gPw' },
+    { title: 'uclaphysicsvideo', desc: 'UCLA\'s physics department channel featuring lecture demonstrations.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCXWBuswk0HFXgqJw3MXT1Ow' },
+    { title: 'The Science Asylum', desc: 'The Science Asylum explains physics and math concepts with an energetic, humorous style.', tags: ['Physics', 'Mathematics', 'Science'], url: 'http://www.youtube.com/channel/UCXgNowiGxwwnLeQ7DXTwXPg' },
+    { title: 'DGN Sounds', desc: 'Ambient and lo-fi music channel for focus and relaxation.', tags: ['Music'], url: 'http://www.youtube.com/channel/UCXtHV_KWYlXFnAYzPGP4e0Q' },
+    { title: 'Coke Studio India ', desc: 'Music show featuring collaborations between Indian and international artists.', tags: ['Music'], url: 'http://www.youtube.com/channel/UCXuO_AmrcE16fDoNiq9JZZg' },
+    { title: 'Linus Tech Tips', desc: 'Linus Sebastian\'s channel covering tech reviews, builds, and hardware news.', tags: ['Technology', 'News & Politics'], url: 'http://www.youtube.com/channel/UCXuqSBlHAE6Xw-yeJA0Tunw' },
+    { title: 'Mark Rober', desc: 'Mark Rober combines engineering, science, and entertainment in elaborate builds and pranks.', tags: ['Engineering', 'Science'], url: 'http://www.youtube.com/channel/UCY1kMZp36IQSyNx_9h4mpCg' },
+    { title: 'Fit Tuber', desc: 'Fit Tuber shares Indian fitness, diet, and workout guidance in English.', tags: ['Fitness & Health'], url: 'http://www.youtube.com/channel/UCYC6Vcczj8v-Y5OgpEJTFBw' },
+    { title: '3Blue1Brown', desc: 'Grant Sanderson\'s animated explanations of mathematics with visual intuition.', tags: ['Mathematics', 'Art & Media'], url: 'http://www.youtube.com/channel/UCYO_jab_esuFRV4b17AJtAw' },
+    { title: 'The Royal Institution', desc: 'The Royal Institution shares science lectures and demonstrations, including the famous Christmas Lectures.', tags: ['Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCYeF244yNGuFefuFKqxIAXw' },
+    { title: 'SGPC, Sri Amritsar', desc: 'Official channel of the Shiromani Gurdwara Parbandhak Committee (SGPC), which manages Sikh gurdwaras including the Golden Temple.', tags: ['Spirituality'], url: 'http://www.youtube.com/channel/UCYn6UEtQ771a_OWSiNBoG8w' },
+    { title: 'Diljit Dosanjh', desc: 'Punjabi singer and actor Diljit Dosanjh\'s music videos and updates.', tags: ['Music'], url: 'http://www.youtube.com/channel/UCZRdNleCgW-BGUJf-bbjzQg' },
+    { title: 'SciShow', desc: 'General science education videos covering a wide range of topics.', tags: ['Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCZYTClx2T1of7BRZ86-8fow' },
+    { title: 'VICE News', desc: 'VICE News covers in-depth journalism on global issues and current events.', tags: ['News & Politics'], url: 'http://www.youtube.com/channel/UCZaT_X_mc0BI-djXOlfhqWQ' },
+    { title: 'FlickFacts', desc: 'FlickFacts shares movie trivia and behind-the-scenes facts.', tags: [], url: 'http://www.youtube.com/channel/UCZkfExxPNWmKwBlIg5_Aixg' },
+    { title: 'Regional Science Centre Bhopal', desc: 'Official channel of the Regional Science Centre in Bhopal, an Indian science museum.', tags: ['Science'], url: 'http://www.youtube.com/channel/UCZu0wPll50z5Pt2dzMgNrwg' },
+    { title: 'iterorganization', desc: 'Official channel of ITER, the international fusion energy research project.', tags: ['Nuclear Science'], url: 'http://www.youtube.com/channel/UCZzwQDDag5eP4Rs-2d4nX5g' },
+    { title: 'Graphic India', desc: 'Graphic India, an Indian animation and comics studio, shares original animated content.', tags: ['Art & Media'], url: 'http://www.youtube.com/channel/UC_IH3nyZEJgzaXbXa6kSCdQ' },
+    { title: 'blackpenredpen', desc: 'Steve Chow (blackpenredpen) works through math problems on a whiteboard.', tags: ['Mathematics'], url: 'http://www.youtube.com/channel/UC_SvYP0k05UKiJ_2ndB02IA' },
+    { title: 'SandeepMaheshwariSpirituality', desc: 'Sandeep Maheshwari\'s talks on motivation, self-improvement, and spirituality.', tags: ['Spirituality'], url: 'http://www.youtube.com/channel/UCaEtAfisWDXL3eG8u_M2brA' },
+    { title: 'Jefferson Lab', desc: 'Official channel of Thomas Jefferson National Accelerator Facility, a U.S. nuclear physics laboratory.', tags: ['Physics', 'Nuclear Science'], url: 'http://www.youtube.com/channel/UCaFNRQX0ppK153omMBR4ikQ' },
+    { title: 'Idealized Science Institute', desc: 'Idealized Science Institute shares physics and science education content.', tags: ['Physics', 'Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCaLQ6nrWdCj7YOgRYw0XoDw' },
+    { title: 'HRI Allahabad Official', desc: 'Official channel of the Harish-Chandra Research Institute (HRI), Allahabad, India.', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UCbL5k4FnxnUTWg8amIl3cAw' },
+    { title: 'GSMArena Official', desc: 'GSMArena\'s official channel with phone reviews, specs comparisons, and mobile tech news.', tags: ['Technology', 'News & Politics'], url: 'http://www.youtube.com/channel/UCbLq9tsbo8peV22VxbDAfXA' },
+    { title: 'Professor Julius Sumner Miller', desc: 'Archive of Professor Julius Sumner Miller\'s classic "Why Is It So?" physics demonstration television programs.', tags: ['Physics', 'History', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCbdjjTZBHNSgjzuJQqH5-pw' },
+    { title: 'Bon Appétit', desc: 'Bon Appétit\'s cooking channel featuring recipes, kitchen tips, and chef-led video series.', tags: ['Cooking & Food'], url: 'http://www.youtube.com/channel/UCbpMy0Fg74eXXkvxJrtEn3w' },
+    { title: 'PHYSICS By A. SINGH Sir', desc: 'Physics lectures and problem-solving by A. Singh, aimed at Indian students.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCcIqPp6b_AReGjgzLrNYDtw' },
+    { title: 'Sajjad Ali', desc: 'Pakistani singer Sajjad Ali\'s music channel.', tags: ['Music'], url: 'http://www.youtube.com/channel/UCcLhcgA_E3F7WHmmhInA-wg' },
+    { title: 'ReligionForBreakfast', desc: 'Religion for Breakfast explores world religions and mythology from an academic, non-devotional perspective.', tags: ['Spirituality', 'Mythology & Culture'], url: 'http://www.youtube.com/channel/UCct9aR7HC79Cv2g-9oDOTLw' },
+    { title: 'Freedom in Thought', desc: 'Freedom in Thought explores philosophy, psychology, and self-development.', tags: ['Philosophy'], url: 'http://www.youtube.com/channel/UCd6Za0CXVldhY8fK8eYoIuw' },
+    { title: 'Curiosity Stream', desc: 'Curiosity Stream\'s channel featuring documentary content on science, history, and nature.', tags: ['Science', 'History', 'Documentary'], url: 'http://www.youtube.com/channel/UCd7zlpSjvUuUwsQdqV3LF3w' },
+    { title: 'Curt Jaimungal', desc: 'Curt Jaimungal\'s Theories of Everything podcast interviews physicists and philosophers on the nature of reality.', tags: ['Philosophy', 'Podcast'], url: 'http://www.youtube.com/channel/UCdWIQh9DGG6uhJk8eyIFl1w' },
+    { title: 'TechWiser', desc: 'TechWiser covers tech tips, tutorials, and troubleshooting guides.', tags: ['Technology'], url: 'http://www.youtube.com/channel/UCdp6GUwjKscp5ST4M4WgIpw' },
+    { title: 'Post Malone', desc: 'Official channel of musician Post Malone.', tags: ['Music'], url: 'http://www.youtube.com/channel/UCeLHszkByNZtPKcaVXOCOQQ' },
+    { title: 'IUAC', desc: 'Official channel of the Inter-University Accelerator Centre (IUAC), India.', tags: ['Nuclear Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCeu_6DH_VvIFGIRX7V5ottg' },
+    { title: 'Nityānanda Miśra', desc: 'Nityānanda Miśra, a Sanskrit scholar and author, shares videos on Sanskrit language, names, and scholarship.', tags: ['Mythology & Culture'], url: 'http://www.youtube.com/channel/UCfYxoHmGOSixR8JoCe28BJQ' },
+    { title: 'Center of Math', desc: 'Center of Math shares math tutoring and problem-solving videos.', tags: ['Mathematics'], url: 'http://www.youtube.com/channel/UCfbSz1B68ytEKX0D6AFdddQ' },
+    { title: 'PolyMatter', desc: 'PolyMatter explains geopolitics, economics, and global business through in-depth video essays.', tags: ['Business', 'Art & Media'], url: 'http://www.youtube.com/channel/UCgNg3vwj3xt7QOrcIDaHdFg' },
+    { title: 'Raghunath Sahoo', desc: 'Raghunath Sahoo, a nuclear physics professor, shares lectures on particle and nuclear physics.', tags: ['Physics', 'Nuclear Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCgz4I0z1fKTyKfG6mbIx8Zg' },
+    { title: 'KRSNA', desc: 'KRSNA, an Indian rapper, shares music videos and freestyles.', tags: ['Music'], url: 'http://www.youtube.com/channel/UChDX4wagpTQS0aTm4eyhJaw' },
+    { title: 'Int\'l Centre for Theoretical Physics', desc: 'The International Centre for Theoretical Physics (ICTP) in Trieste shares physics research talks and lectures.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UChFTAv9bS-LJjXSVkFBkK5g' },
+    { title: 'Rajarshi Nandy', desc: 'Rajarshi Nandy shares talks on Shakta Dharma, Tantra, and Hindu mythology, and runs the Kamakhya Bhairava Upasaka Foundation.', tags: ['Spirituality', 'Mythology & Culture'], url: 'http://www.youtube.com/channel/UChY48I4uKBGENQJbEeRt7QA' },
+    { title: 'Mainz Institute for Theoretical Physics', desc: 'The Mainz Institute for Theoretical Physics shares recorded talks from its scientific programs.', tags: ['Physics', 'Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UChcoeBvt1fM3gsZnlXC2AYQ' },
+    { title: 'Bir Singh', desc: 'Bir Singh, a Punjabi singer known for devotional and folk music.', tags: ['Spirituality', 'Music'], url: 'http://www.youtube.com/channel/UCiEcLcvJhYk1dTuIZDnZEhw' },
+    { title: 'Michel van Biezen', desc: 'Michel van Biezen\'s extensive lecture library covering physics, chemistry, math, and engineering.', tags: ['Physics', 'Mathematics', 'Engineering', 'Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCiGxYawhEp4QyFcX0R60YdQ' },
+    { title: 'Groww Edge', desc: 'Groww\'s educational channel on investing, mutual funds, and personal finance in India.', tags: ['Finance', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCirSG61aPwX5V3lpFj6wbRA' },
+    { title: 'Applied Science', desc: 'Ben Krasnow\'s Applied Science channel exploring hands-on engineering and experimental science builds.', tags: ['Engineering', 'Science'], url: 'http://www.youtube.com/channel/UCivA7_KLKWo43tFcCkFvydw' },
+    { title: 'Physics Almanac', desc: 'Physics Almanac covers physics derivations, concepts, history, and problem-solving from beginner to expert level.', tags: ['Physics', 'History'], url: 'http://www.youtube.com/channel/UCivB-LPu6XH7fnvFlLzKO2A' },
+    { title: 'Suno Ramayan', desc: 'Audio narration of the Hindu epic Ramayana.', tags: ['Mythology & Culture'], url: 'http://www.youtube.com/channel/UCj9wAQeB-fYsMgNLAX4mGIA' },
+    { title: 'MIT Video Productions', desc: 'MIT Video Productions shares recorded lectures and campus event coverage from MIT.', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UCjSXSHPOU4Dr94ENpf2YAiw' },
+    { title: 'Undecided with Matt Ferrell', desc: 'Matt Ferrell\'s Undecided explores emerging clean energy and future technology.', tags: ['Technology'], url: 'http://www.youtube.com/channel/UCjtUS7-SZTi6pXjUbzGHQCg' },
+    { title: 'Thomso IITR', desc: 'Thomso, the annual cultural and technical festival of IIT Roorkee.', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UCjxGpbU9X2TspaJYaiTyOpQ' },
+    { title: 'Vikas Divyakirti', desc: 'Vikas Divyakirti, founder of Drishti IAS, teaches for India\'s UPSC civil services exam.', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UCkrtAaoos4rxt2cw2CIBjuA' },
+    { title: 'Acharya Prashant', desc: 'Acharya Prashant\'s talks on Vedanta, spirituality, and self-inquiry.', tags: ['Spirituality', 'Philosophy'], url: 'http://www.youtube.com/channel/UCkuZJIhMYCnOa0dnWeHuN2w' },
+    { title: 'JINR ', desc: 'Official channel of the Joint Institute for Nuclear Research (JINR) in Dubna, Russia.', tags: ['Nuclear Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCl0Oqa7GzxPusbwjXvxoCCg' },
+    { title: 'Closer To Truth', desc: 'Robert Lawrence Kuhn\'s Closer To Truth explores consciousness, cosmology, meaning, and philosophy through expert interviews.', tags: ['Astronomy', 'Philosophy', 'Podcast'], url: 'http://www.youtube.com/channel/UCl9StMQ79LtEvlrskzjoYbQ' },
+    { title: 'Jason Silva: Shots of Awe', desc: 'Jason Silva\'s Shots of Awe features short, philosophical musings on ideas, technology, and wonder.', tags: ['Technology', 'Philosophy'], url: 'http://www.youtube.com/channel/UClYb9NpXnRemxYoWbcYANsA' },
+    { title: 'IIA Bengaluru', desc: 'Official channel of the Indian Institute of Astrophysics, Bengaluru.', tags: ['Astronomy', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UClc4hftyZVJ2mWl5X44CLZg' },
+    { title: 'Nuclear Security & Safeguards Education Portal', desc: 'Educational portal on nuclear security and safeguards.', tags: ['Nuclear Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCluf2QeoM9dS8sETBJLcmUQ' },
+    { title: 'Dr. Robert Svoboda', desc: 'Dr. Robert Svoboda shares teachings on Ayurveda and traditional Indian medicine.', tags: ['Spirituality', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCmcnwuSQls9-zdMbL2eenkA' },
+    { title: 'Trakin Tech English', desc: 'Trakin Tech\'s English-language channel covering smartphone reviews and tech news.', tags: ['Technology', 'News & Politics'], url: 'http://www.youtube.com/channel/UCn7DATpF0Nk-YJmjw4gMwfg' },
+    { title: 'US National Archives', desc: 'Official channel of the U.S. National Archives, sharing historical government records and footage.', tags: ['History'], url: 'http://www.youtube.com/channel/UCnAsiniI4DF7vAAe7omWWFQ' },
+    { title: 'Ranveer Allahbadia', desc: 'Ranveer Allahbadia\'s channel on entrepreneurship, fitness, and self-improvement (BeerBiceps).', tags: ['Fitness & Health'], url: 'http://www.youtube.com/channel/UCneyi-aYq4VIBYIAQgWmk_w' },
+    { title: 'DeepSkyVideos', desc: 'Brady Haran\'s DeepSkyVideos channel exploring astronomy and deep-sky objects with researchers.', tags: ['Astronomy'], url: 'http://www.youtube.com/channel/UCo-3ThNQmPmQSQL_L6Lx1_w' },
+    { title: 'Veritasium in हिन्दी', desc: 'Veritasium\'s Hindi-dubbed channel bringing physics and science content to Hindi-speaking viewers.', tags: ['Physics', 'Science'], url: 'http://www.youtube.com/channel/UCo-UabaGleyY7a9saGSMNkg' },
+    { title: 'IUCAA SciPOP', desc: 'IUCAA\'s popular science outreach channel on astronomy and astrophysics.', tags: ['Astronomy', 'Science'], url: 'http://www.youtube.com/channel/UCo35iCIc76H5y8SCCaQxZzA' },
+    { title: 'CNBC International', desc: 'CNBC International\'s business news and market coverage.', tags: ['News & Politics', 'Business'], url: 'http://www.youtube.com/channel/UCo7a6riBFJ3tkeHjvkXPn1g' },
+    { title: 'Traya Health', desc: 'Traya Health, an Indian company offering personalized hair-loss treatment programs.', tags: ['Fitness & Health'], url: 'http://www.youtube.com/channel/UCoCbt0YNJL4_MtIo6Lg1ybA' },
+    { title: 'Professor Leonard', desc: 'Professor Leonard\'s in-depth calculus and mathematics lecture videos.', tags: ['Mathematics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCoHhuummRZaIVX7bD4t2czg' },
+    { title: 'Understanding Death', desc: 'Explores death, dying, and end-of-life questions from philosophical and scientific perspectives.', tags: ['Science', 'Philosophy'], url: 'http://www.youtube.com/channel/UCoP_bNBYy2EPKfKH1DLmvqg' },
+    { title: 'The Graphic Earth', desc: 'The Graphic Earth channel visualizes geography, geology, and Earth science topics.', tags: ['Science'], url: 'http://www.youtube.com/channel/UCoQ9wvlhoMYfo6jcIiXjEdg' },
+    { title: 'Welch Labs', desc: 'Welch Labs explains math and machine learning concepts through animated, narrative-driven videos.', tags: ['Mathematics', 'Art & Media'], url: 'http://www.youtube.com/channel/UConVfxXodg78Tzh5nNu85Ew' },
+    { title: 'Numberphile', desc: 'Brady Haran\'s channel about numbers and mathematics, featuring interviews with mathematicians.', tags: ['Mathematics', 'Podcast'], url: 'http://www.youtube.com/channel/UCoxcjq-8xIDTYp3uz647V5A' },
+    { title: 'Gyan Da Sagar', desc: 'Gyan Da Sagar shares Punjabi devotional and spiritual content.', tags: ['Spirituality'], url: 'http://www.youtube.com/channel/UCoyoaHARO6gNAKbphDdMcFg' },
+    { title: 'Aasoka', desc: 'Aasoka, an Indian ed-tech platform, shares educational content for K-12 students.', tags: ['Technology', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCp1IKaxGFEy-TZ0mrW-oqXA' },
+    { title: 'Pandit Hariprasad Chaurasia\'s Vrindaban Gurukul', desc: 'Flute maestro Pandit Hariprasad Chaurasia\'s Vrindaban Gurukul, sharing Indian classical music instruction.', tags: ['Music'], url: 'http://www.youtube.com/channel/UCp2lnEeo8hcZArechvSns9g' },
+    { title: 'Zach Star', desc: 'Zach Star covers math and engineering topics with a focus on motivation and real-world application.', tags: ['Mathematics', 'Engineering'], url: 'http://www.youtube.com/channel/UCpCSAcbqs-sjEVfk_hMfY9w' },
+    { title: 'Arvin Ash', desc: 'Arvin Ash explains physics and cosmology concepts for a general audience.', tags: ['Physics', 'Astronomy'], url: 'http://www.youtube.com/channel/UCpMcsdZf2KkAnfmxiq2MfMQ' },
+    { title: 'Radio City India', desc: 'Radio City India, an Indian radio station, shares music and entertainment content.', tags: ['Music'], url: 'http://www.youtube.com/channel/UCpYTR5JYjj07KrI247vUmKA' },
+    { title: 'What If', desc: 'What If explores speculative science scenarios through narrated animation.', tags: ['Science', 'Art & Media'], url: 'http://www.youtube.com/channel/UCphTF9wHwhCt-BzIq-s4V-g' },
+    { title: 'Cinesec IITR', desc: 'Cinesec, the film society of IIT Roorkee.', tags: ['Education & Lectures', 'Art & Media'], url: 'http://www.youtube.com/channel/UCpt93feDCVAGZ68e9FO130Q' },
+    { title: 'Eddie Woo', desc: 'Eddie Woo, an Australian maths teacher, shares lessons and explores common math misconceptions.', tags: ['Mathematics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCq0EGvLTyy-LLT1oUSO_0FQ' },
+    { title: 'Nightshift – Kurzgesagt After Dark', desc: 'Kurzgesagt\'s side channel, Nightshift, covering darker and more mature topics in animated form.', tags: ['Art & Media'], url: 'http://www.youtube.com/channel/UCq8ZAAsI89IoJ-fn1gYpO3g' },
+    { title: 'The Sanskrit Channel', desc: 'The Sanskrit Channel teaches Sanskrit language and literature.', tags: ['Mythology & Culture', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCqFg6QnwgtVHo1iFgpxrx-A' },
+    { title: 'Coin Bureau', desc: 'Coin Bureau covers cryptocurrency news, analysis, and educational content.', tags: ['Finance', 'News & Politics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCqK_GSMbpiV8spgD3ZGloSw' },
+    { title: 'Peepal Baba', desc: 'Peepal Baba, an Indian environmentalist known for large-scale tree plantation drives.', tags: [], url: 'http://www.youtube.com/channel/UCqTJFC4i1X261hhma5DQGaQ' },
+    { title: 'IceCube Neutrino Observatory', desc: 'Official channel of the IceCube Neutrino Observatory at the South Pole.', tags: ['Astronomy', 'Nuclear Science'], url: 'http://www.youtube.com/channel/UCqhypTo6SWmi5bbVBmUf9NA' },
+    { title: 'StarTalk', desc: 'Neil deGrasse Tyson\'s StarTalk explores space, science, and pop culture through interviews and comedy.', tags: ['Space', 'Science', 'Comedy', 'Podcast'], url: 'http://www.youtube.com/channel/UCqoAEDirJPjEUFcF2FklnBA' },
+    { title: 'CERN', desc: 'Official channel of CERN, the European Organization for Nuclear Research.', tags: ['Nuclear Science'], url: 'http://www.youtube.com/channel/UCrHXK2A9JtiexqwHuWGeSMg' },
+    { title: 'Web of Stories - Life Stories of Remarkable People', desc: 'Web of Stories features long-form interviews capturing the life stories of notable scientists, artists, and thinkers.', tags: ['Podcast'], url: 'http://www.youtube.com/channel/UCrN1lcGgsCB9axGjZjpOqiQ' },
+    { title: 'Muon Ray', desc: 'Muon Ray explores physics experiments and demonstrations, especially electromagnetism and radiation.', tags: ['Physics', 'Science'], url: 'http://www.youtube.com/channel/UCrgvg3HpIT-MuwvTDVRm9mA' },
+    { title: 'Christine Nattrass', desc: 'Christine Nattrass, a nuclear physicist, shares lectures and talks on particle and nuclear physics.', tags: ['Physics', 'Nuclear Science', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCrsZseq3ibidY8-_ey6aBdA' },
+    { title: 'COMSOL', desc: 'COMSOL, maker of multiphysics simulation software, shares tutorials and application demos.', tags: ['Technology'], url: 'http://www.youtube.com/channel/UCrx4DqkACEdL_cV8eDQ-_7g' },
+    { title: 'La Physique Autrement', desc: 'French-language channel explaining physics concepts in an accessible way.', tags: ['Physics'], url: 'http://www.youtube.com/channel/UCrz6yN1bOc14v6WgXOV4LEQ' },
+    { title: 'TEDx Talks', desc: 'The main TEDx Talks channel featuring independently organized TEDx event talks worldwide.', tags: [], url: 'http://www.youtube.com/channel/UCsT0YIqwnpJCM-mx7-gSA4Q' },
+    { title: 'Kurzgesagt – In a Nutshell', desc: 'Kurzgesagt – In a Nutshell explores big questions in science, philosophy, and the universe through vivid animation.', tags: ['Astronomy', 'Science', 'Philosophy', 'Art & Media'], url: 'http://www.youtube.com/channel/UCsXVk37bltHxD1rDPwtNM8Q' },
+    { title: 'TED-Ed', desc: 'TED-Ed\'s animated educational videos and lessons created with educators and animators.', tags: ['Education & Lectures', 'Art & Media'], url: 'http://www.youtube.com/channel/UCsooa4yRKGN_zEE8iknghZA' },
+    { title: 'ChinmayaChannel', desc: 'Chinmaya Mission\'s channel sharing talks on Vedanta and Indian spiritual philosophy.', tags: ['Spirituality', 'Philosophy'], url: 'http://www.youtube.com/channel/UCtDAJiFT4sy42oNPA8zo0sw' },
+    { title: 'SHUBH', desc: 'Punjabi singer SHUBH\'s official music channel.', tags: ['Music'], url: 'http://www.youtube.com/channel/UCtGbExCzlwmsyWKpxLnyEww' },
+    { title: 'SpaceX', desc: 'Official channel of SpaceX, featuring rocket launches and spaceflight milestones.', tags: ['Space'], url: 'http://www.youtube.com/channel/UCtI0Hodo5o5dUb67FeUjDeA' },
+    { title: 'Duke University', desc: 'Official channel of Duke University featuring lectures, research, and campus events.', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UCtXRIIGnq4rU8REt1vAuttw' },
+    { title: 'StatQuest with Josh Starmer', desc: 'Josh Starmer explains statistics, machine learning, and data science concepts clearly and simply.', tags: ['Science'], url: 'http://www.youtube.com/channel/UCtYLUTtgS3k1Fg4y5tAhLbw' },
+    { title: 'TechAltar', desc: 'TechAltar covers tech industry news and analysis, especially around mobile platforms.', tags: ['Technology', 'News & Politics'], url: 'http://www.youtube.com/channel/UCtZO3K2p8mqFwiKWb9k7fXA' },
+    { title: 'IIT Roorkee', desc: 'Official channel of the Indian Institute of Technology Roorkee.', tags: ['Technology', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCtjmOI-TI_IkbKzddxTw9cg' },
+    { title: 'THE HINDU SAGA', desc: 'Shares stories, mythology, and interesting facts about Hinduism and Indian history.', tags: ['Mythology & Culture', 'History'], url: 'http://www.youtube.com/channel/UCtoU7cQPzDlK-RifwrMEllA' },
+    { title: 'Charlie Dean Archives', desc: 'Restored archival footage and newsreels from historical events.', tags: ['History'], url: 'http://www.youtube.com/channel/UCuX0poHk--DqZIVh_O9G5rQ' },
+    { title: 'Clear Physics ', desc: 'Clear Physics explains physics concepts through clean, focused animated videos.', tags: ['Physics', 'Art & Media'], url: 'http://www.youtube.com/channel/UCusDMnu0ANwHCIuSon-Wyxg' },
+    { title: 'Swaminarayan Aksharpith', desc: 'Swaminarayan Aksharpith, a publishing wing of the BAPS Swaminarayan Sanstha, sharing spiritual literature and talks.', tags: ['Spirituality'], url: 'http://www.youtube.com/channel/UCutvkeF3tVgItCX31QhJ2Dw' },
+    { title: 'Melvin Louis', desc: 'Melvin Louis, an Indian choreographer, shares dance covers and choreography videos.', tags: [], url: 'http://www.youtube.com/channel/UCv58r9mAhzFjrfk4d5tK2RA' },
+    { title: 'Sixty Symbols', desc: 'Brady Haran\'s Sixty Symbols channel exploring physics and astronomy with University of Nottingham researchers.', tags: ['Physics', 'Astronomy', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCvBqzzvUBLCs8Y7Axb-jZew' },
+    { title: 'Big Think', desc: 'Big Think features interviews and talks from experts across science, philosophy, and culture.', tags: ['Science', 'Philosophy', 'Podcast'], url: 'http://www.youtube.com/channel/UCvQECJukTDE2i6aCoMnS-Vg' },
+    { title: 'Beebom', desc: 'Beebom covers Indian and global tech news, reviews, and how-to guides.', tags: ['Technology', 'News & Politics'], url: 'http://www.youtube.com/channel/UCvpfclapgcuJo0M_x65pfRw' },
+    { title: 'ISRO Official', desc: 'Official channel of ISRO, India\'s national space agency.', tags: ['Space'], url: 'http://www.youtube.com/channel/UCw5hEVOTfz_AfzsNFWyNlNg' },
+    { title: 'Pranjal Kamra', desc: 'Pranjal Kamra covers personal finance, investing, and the Indian stock market.', tags: ['Finance', 'Business'], url: 'http://www.youtube.com/channel/UCwAdQUuPT6laN-AQR17fe1g' },
+    { title: 'Animalogic', desc: 'Animalogic explores animal biology, behavior, and evolution through animated explainers.', tags: ['Science', 'Art & Media'], url: 'http://www.youtube.com/channel/UCwg6_F2hDHYrqbNSGjmar4w' },
+    { title: 'Jonas Lippuner', desc: 'Jonas Lippuner\'s lecture videos on medical physics and radiology.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCxAPPo8n9u9aw3jDnIJ2IpQ' },
+    { title: 'IITR Uncut', desc: 'Student-made videos and vlogs from IIT Roorkee (IITR Uncut).', tags: ['Education & Lectures'], url: 'http://www.youtube.com/channel/UCxjmo46no2IO7tcibirPWVA' },
+    { title: 'Neelesh Misra', desc: 'Neelesh Misra, Indian storyteller and radio host known for the audio series Yaadon Ka Idiot Box.', tags: [], url: 'http://www.youtube.com/channel/UCy5mW8fB24ITiiC0etjLI6w' },
+    { title: 'IUCAA: Lectures, Colloquia & Live Streams', desc: 'IUCAA\'s channel of lectures, colloquia, and live streams on astronomy and astrophysics.', tags: ['Astronomy', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCy6pceaKQTxOLPStgzJ4aSg' },
+    { title: 'riken english channel', desc: 'English-language channel of RIKEN, Japan\'s largest comprehensive research institution.', tags: [], url: 'http://www.youtube.com/channel/UCyE-1AI0fTrOsoYT-whBwoQ' },
+    { title: 'MIT Physics Instructional Resources Lab', desc: 'MIT\'s Physics Instructional Resources Lab shares demonstration videos used in physics teaching.', tags: ['Physics', 'Education & Lectures'], url: 'http://www.youtube.com/channel/UCyFi7JjZgmBoSmibrwOQiTw' },
+    { title: 'Biswa Kalyan Rath', desc: 'Biswa Kalyan Rath, Indian stand-up comedian, shares comedy specials and sketches.', tags: ['Comedy'], url: 'http://www.youtube.com/channel/UCyOyIUC4bBPjNWkd5gG30TA' },
+    { title: 'INFN LNF - Laboratori Nazionali di Frascati', desc: 'Official channel of INFN\'s Laboratori Nazionali di Frascati, an Italian particle physics laboratory.', tags: ['Physics', 'Nuclear Science'], url: 'http://www.youtube.com/channel/UCyi2ABzIOiISreiYPxQ5g_w' },
+    { title: 'Physics Matters', desc: 'Physics Matters covers physics concepts and demonstrations for students.', tags: ['Physics'], url: 'http://www.youtube.com/channel/UCyxwnZPodqQR0hUo5sapRFw' },
+    { title: 'Suno Mahabharata', desc: 'Audio narration of the Hindu epic Mahabharata.', tags: ['Mythology & Culture'], url: 'http://www.youtube.com/channel/UCzP05BD9seR3Bw1Zl1cvFSQ' },
+    { title: 'PowerfulJRE', desc: 'Clips from The Joe Rogan Experience podcast.', tags: ['Podcast'], url: 'http://www.youtube.com/channel/UCzQUP1qoWDoEbmsQxvdjxgQ' },
+    { title: 'Seeker', desc: 'Seeker produces science and technology explainer videos on current research and discoveries.', tags: ['Technology', 'Science'], url: 'http://www.youtube.com/channel/UCzWQYUVCpZqtN93H8RR44Qw' }
   ];
+
 
   let activeTag = 'all';
   let searchQuery = '';
 
   function allTags() {
     const set = new Set();
-    videos.forEach(v => v.tags.forEach(t => set.add(t.trim().toLowerCase())));
+    channels.forEach(c => c.tags.forEach(t => set.add(t.trim().toLowerCase())));
     return [...set].sort();
   }
 
@@ -306,10 +606,10 @@
     });
   }
 
-  function matchesFilter(v) {
+  function matchesFilter(c) {
     const q = searchQuery.toLowerCase();
-    const matchTag = activeTag === 'all' || v.tags.map(t => t.toLowerCase()).includes(activeTag);
-    const matchSearch = !q || v.title.toLowerCase().includes(q) || (v.desc || '').toLowerCase().includes(q) || v.tags.some(t => t.toLowerCase().includes(q));
+    const matchTag = activeTag === 'all' || c.tags.map(t => t.toLowerCase()).includes(activeTag);
+    const matchSearch = !q || c.title.toLowerCase().includes(q) || (c.desc || '').toLowerCase().includes(q) || c.tags.some(t => t.toLowerCase().includes(q));
     return matchTag && matchSearch;
   }
 
@@ -323,28 +623,28 @@
   }
 
   function render() {
-    const filtered = videos.filter(matchesFilter);
+    const filtered = channels.filter(matchesFilter);
     renderTags();
 
     const grid = document.getElementById('grid');
     const noRes = document.getElementById('noResults');
-    document.getElementById('count').textContent = `${filtered.length} video${filtered.length !== 1 ? 's' : ''}`;
+    document.getElementById('count').textContent = `${filtered.length} channel${filtered.length !== 1 ? 's' : ''}`;
     noRes.style.display = filtered.length === 0 ? 'block' : 'none';
 
     grid.innerHTML = '';
-    filtered.forEach(v => {
+    filtered.forEach(c => {
       const card = document.createElement('div');
       card.className = 'card';
       card.innerHTML = `
         <div class="card-body">
-          <div class="card-title">${escHtml(v.title)}</div>
-          ${v.desc ? `<div class="card-desc">${escHtml(v.desc)}</div>` : ''}
+          <div class="card-title">${escHtml(c.title)}</div>
+          ${c.desc ? `<div class="card-desc">${escHtml(c.desc)}</div>` : ''}
           <div class="card-tags">
-            ${v.tags.map(t => `<span class="tag" onclick="event.stopPropagation();filterByTag('${escHtml(t)}')">${escHtml(t)}</span>`).join('')}
+            ${c.tags.map(t => `<span class="tag" onclick="event.stopPropagation();filterByTag('${escHtml(t)}')">${escHtml(t)}</span>`).join('')}
           </div>
         </div>
       `;
-      card.addEventListener('click', () => window.open(`https://www.youtube.com/watch?v=${v.id}`, '_blank'));
+      card.addEventListener('click', () => window.open(c.url, '_blank'));
       grid.appendChild(card);
     });
   }
