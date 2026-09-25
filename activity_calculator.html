@@ -347,7 +347,7 @@
   <header class="header">
     <div class="header-eyebrow"><i class="ti ti-atom"></i> Nuclear Physics Tool</div>
     <h1>Radioactive Decay Calculator</h1>
-    <p>Select a nucleus, set initial activity and manufacturing date to compute current activity and decay statistics.</p>
+    <p>Select a nucleus, set initial activity and manufacturing date to compute activity and decay statistics on any date.</p>
   </header>
 
   <!-- Input Card -->
@@ -398,6 +398,18 @@
         </div>
       </div>
       <div style="margin-top:8px; font-size:12px; color:var(--amber);"><i class="ti ti-info-circle"></i> Isotope not in database — enter half-life manually.</div>
+    </div>
+
+    <!-- Calculation date -->
+    <div class="calc-row" style="margin-top:12px; display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap;">
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-2); cursor:pointer; user-select:none;">
+        <input type="checkbox" id="use-now" checked onchange="onUseNowChange()" style="width:auto; accent-color:var(--accent); cursor:pointer;">
+        Use current date &amp; time
+      </label>
+      <div class="field" id="calcdate-field" style="display:none; flex:1; min-width:160px; margin-bottom:0;">
+        <label for="calcdate">Calculate activity on</label>
+        <input type="date" id="calcdate" oninput="update()">
+      </div>
     </div>
 
     <!-- Live results -->
@@ -1128,6 +1140,12 @@ function onElemChange() {
 
 function onMassInput() { update(); }
 
+function onUseNowChange() {
+  const useNow = document.getElementById('use-now').checked;
+  document.getElementById('calcdate-field').style.display = useNow ? 'none' : '';
+  update();
+}
+
 function formatActivity(mbq) {
   if (mbq >= 1e6)   return (mbq / 1e6).toPrecision(4) + ' TBq';
   if (mbq >= 1000)  return (mbq / 1000).toPrecision(4) + ' GBq';
@@ -1155,7 +1173,10 @@ function update() {
   const mfgVal = document.getElementById('mfg').value;
   const now = new Date();
   const mfg = mfgVal ? new Date(mfgVal) : now;
-  const dtSec = Math.max(0, (now - mfg) / 1000);
+  const useNow = document.getElementById('use-now').checked;
+  const calcVal = document.getElementById('calcdate').value;
+  const calcDate = useNow ? now : (calcVal ? new Date(calcVal) : now);
+  const dtSec = Math.max(0, (calcDate - mfg) / 1000);
 
   // Look up known nuclide — detailed DB first, then ISO_DB
   const key = `${elemSym}:${A}`;
@@ -1215,7 +1236,7 @@ function update() {
 
   document.getElementById('results').innerHTML = `
     <div class="metric">
-      <div class="metric-label">Current activity</div>
+      <div class="metric-label">${useNow ? 'Current activity' : 'Activity on ' + calcDate.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</div>
       <div class="metric-value accent">${formatActivity(aCurrent)}</div>
       <div class="metric-sub">${aCurrent < 0.001 ? aCurrent.toExponential(3) : aCurrent.toPrecision(4)} MBq</div>
       <div class="metric-sub">${formatCurie(aCurrent)}</div>
@@ -1249,7 +1270,7 @@ function update() {
 
   // Chart uses a synthetic nuclide-like object
   const nuclideForChart = { hl_s };
-  drawChart(nuclideForChart, a0, dtSec, mfg);
+  drawChart(nuclideForChart, a0, dtSec, mfg, useNow ? 'Now' : 'Selected date');
 
   // Info card
   const infoCard = document.getElementById('info-card');
@@ -1280,7 +1301,7 @@ function update() {
   }
 }
 
-function drawChart(n, a0, currentElapsedSec, mfgDate) {
+function drawChart(n, a0, currentElapsedSec, mfgDate, markerLabel) {
   const ctx = document.getElementById('dc').getContext('2d');
   const hl_s = n.hl_s;
   const spanSec = Math.max(4 * hl_s, currentElapsedSec + hl_s * 0.5);
@@ -1321,7 +1342,7 @@ function drawChart(n, a0, currentElapsedSec, mfgDate) {
           tension: 0.4
         },
         {
-          label: 'Now',
+          label: markerLabel || 'Now',
           data: nowData,
           borderColor: '#e84040',
           backgroundColor: '#e84040',
@@ -1371,6 +1392,7 @@ const defaultMfg = new Date(today);
 defaultMfg.setDate(today.getDate() - 30);
 document.getElementById('mfg').value = defaultMfg.toISOString().split('T')[0];
 document.getElementById('mfg').max = today.toISOString().split('T')[0];
+document.getElementById('calcdate').value = today.toISOString().split('T')[0];
 onElemChange(); // sets default mass number and runs update()
 </script>
 </body>
